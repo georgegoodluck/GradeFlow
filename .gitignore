@@ -25,8 +25,21 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# env files — keep .env.example tracked
+.env
+.env.local
+.env.*.local
+
+# Prisma generated client (Prisma 7 outputs to generated/)
+/generated/*
+!/generated/.gitkeep
+
+# local uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# pnpm
+.pnpm-store
 
 # vercel
 .vercel
