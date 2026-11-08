@@ -31,8 +31,7 @@ yarn-error.log*
 .env.*.local
 
 # Prisma generated client (Prisma 7 outputs to generated/)
-/generated/*
-!/generated/.gitkeep
+/generated
 
 # local uploads
 /public/uploads/*
