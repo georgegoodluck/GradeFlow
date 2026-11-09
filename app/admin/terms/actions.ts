@@ -6,16 +6,24 @@ import { withTenant } from '@/lib/tenant';
 
 export async function createTerm(formData: FormData) {
   const session = await auth();
-  if (!session?.user) throw new Error('Unauthorized');
+  if (!session?.user?.schoolId) {
+    throw new Error('Unauthorized');
+  }
 
   const sessionName = String(formData.get('session') ?? '').trim();
   const termName = String(formData.get('name') ?? '').trim();
-  if (!sessionName || !termName) throw new Error('Missing fields');
+
+  if (!sessionName || !termName) {
+    throw new Error('Session and Term name are required.');
+  }
 
   try {
     await withTenant(session.user.schoolId, async (tx) => {
-      // If this is the first term, make it active by default
-      const count = await tx.term.count();
+      // If this is the school's first term, make it active by default
+      const count = await tx.term.count({
+        where: { schoolId: session.user.schoolId },
+      });
+
       await tx.term.create({
         data: {
           schoolId: session.user.schoolId,
@@ -26,6 +34,7 @@ export async function createTerm(formData: FormData) {
       });
     });
   } catch (error: unknown) {
+    // Prisma unique constraint violation code (e.g. @@unique([schoolId, session, name]))
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -42,18 +51,27 @@ export async function createTerm(formData: FormData) {
 
 export async function setActiveTerm(termId: string) {
   const session = await auth();
-  if (!session?.user) throw new Error('Unauthorized');
+  if (!session?.user?.schoolId) {
+    throw new Error('Unauthorized');
+  }
+
+  if (!termId?.trim()) {
+    throw new Error('Term ID is required.');
+  }
 
   await withTenant(session.user.schoolId, async (tx) => {
-    // Turn off active for all terms in this school
+    // Deactivate all terms for the current school
     await tx.term.updateMany({
       where: { schoolId: session.user.schoolId },
       data: { isActive: false },
     });
 
-    // Turn on active for the selected term
+    // Activate the targeted term scoped to this school to prevent cross-tenant updates
     await tx.term.update({
-      where: { id: termId },
+      where: {
+        id: termId,
+        schoolId: session.user.schoolId,
+      },
       data: { isActive: true },
     });
   });

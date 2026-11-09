@@ -1,16 +1,20 @@
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { withTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/PageHeader';
 import { createSubject, deleteSubject } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
+import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function SubjectsPage() {
   const session = await auth();
-  const subjects = await prisma.subject.findMany({
-    where: { schoolId: session!.user.schoolId },
-    orderBy: { name: 'asc' },
+  if (!session?.user?.schoolId) redirect('/login');
+
+  const subjects = await withTenant(session.user.schoolId, async (tx) => {
+    return tx.subject.findMany({
+      orderBy: { name: 'asc' },
+    });
   });
 
   return (
@@ -42,6 +46,7 @@ export default async function SubjectsPage() {
                 <td className="px-6 py-4 text-right">
                   <form
                     action={async () => {
+                      'use server';
                       await deleteSubject(s.id);
                     }}
                   >

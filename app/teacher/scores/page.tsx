@@ -1,17 +1,42 @@
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { withTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/PageHeader';
 import { saveScore } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
+import { redirect } from 'next/navigation';
+export const dynamic = 'force-dynamic';
 
 export default async function ScoresPage() {
   const session = await auth();
-  const schoolId = session!.user.schoolId;
+  if (!session?.user?.schoolId) redirect('/login');
+  const schoolId = session.user.schoolId;
+  const role = session.user.role;
 
-  // 1. Get Active Term
-  const activeTerm = await prisma.term.findFirst({
-    where: { schoolId, isActive: true },
+  // 1–3. Fetch active term, assignments, and students — all inside withTenant
+  const { activeTerm, assignments, students } = await withTenant(schoolId, async (tx) => {
+    const activeTerm = await tx.term.findFirst({
+      where: { isActive: true },
+    });
+
+    if (!activeTerm) {
+      return { activeTerm: null, assignments: [], students: [] };
+    }
+
+    const assignments = await tx.teacherSubject.findMany({
+      where: {
+        ...(role === 'TEACHER' ? { teacherId: session.user.id } : {}),
+      },
+      include: { subject: true, class: true },
+    });
+
+    const classIds = [...new Set(assignments.map((a) => a.classId))];
+    const students = await tx.student.findMany({
+      where: { classId: { in: classIds } },
+      orderBy: { lastName: 'asc' },
+    });
+
+    return { activeTerm, assignments, students };
   });
 
   if (!activeTerm) {
@@ -21,23 +46,6 @@ export default async function ScoresPage() {
       </div>
     );
   }
-
-  // 2. Get Teacher's Assignments (or all for Admin)
-  const role = session!.user.role;
-  const assignments = await prisma.teacherSubject.findMany({
-    where: {
-      schoolId,
-      ...(role === 'TEACHER' ? { teacherId: session!.user.id } : {}),
-    },
-    include: { subject: true, class: true },
-  });
-
-  // 3. Get all students for those classes
-  const classIds = [...new Set(assignments.map((a) => a.classId))];
-  const students = await prisma.student.findMany({
-    where: { schoolId, classId: { in: classIds } },
-    orderBy: { lastName: 'asc' },
-  });
 
   return (
     <div>

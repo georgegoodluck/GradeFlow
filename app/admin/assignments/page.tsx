@@ -1,27 +1,30 @@
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { withTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/PageHeader';
 import { assignTeacher, unassignTeacher } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
+import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function AssignmentsPage() {
   const session = await auth();
-  const schoolId = session!.user.schoolId;
+  if (!session?.user?.schoolId) redirect('/login');
+  const schoolId = session.user.schoolId;
 
-  const [teachers, subjects, classes, assignments] = await Promise.all([
-    prisma.user.findMany({
-      where: { schoolId, role: 'TEACHER' },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.subject.findMany({ where: { schoolId }, orderBy: { name: 'asc' } }),
-    prisma.class.findMany({ where: { schoolId }, orderBy: { name: 'asc' } }),
-    prisma.teacherSubject.findMany({
-      where: { schoolId },
-      include: { teacher: true, subject: true, class: true },
-      orderBy: { createdAt: 'desc' },
-    }),
-  ]);
+  const [teachers, subjects, classes, assignments] = await withTenant(schoolId, async (tx) => {
+    return Promise.all([
+      tx.user.findMany({
+        where: { role: 'TEACHER' },
+        orderBy: { name: 'asc' },
+      }),
+      tx.subject.findMany({ orderBy: { name: 'asc' } }),
+      tx.class.findMany({ orderBy: { name: 'asc' } }),
+      tx.teacherSubject.findMany({
+        include: { teacher: true, subject: true, class: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+  });
 
   return (
     <div>

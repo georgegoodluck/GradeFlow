@@ -1,19 +1,23 @@
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { withTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/PageHeader';
 import { createUser } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
+import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function UsersPage() {
   const session = await auth();
-  const users = await prisma.user.findMany({
-    where: {
-      schoolId: session!.user.schoolId,
-      role: { in: ['OWNER', 'ADMIN', 'TEACHER'] },
-    },
-    orderBy: { createdAt: 'desc' },
+  if (!session?.user?.schoolId) redirect('/login');
+
+  const users = await withTenant(session.user.schoolId, async (tx) => {
+    return tx.user.findMany({
+      where: {
+        role: { in: ['OWNER', 'ADMIN', 'TEACHER'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   });
 
   return (

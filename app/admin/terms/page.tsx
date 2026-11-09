@@ -1,44 +1,36 @@
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
-import { PageHeader } from '@/components/PageHeader';
-import { createTerm, setActiveTerm } from './actions';
-import { SubmitButton } from '@/components/SubmitButton';
-import { Input } from '@/components/ui/input';
 export const dynamic = 'force-dynamic';
+
+import { auth } from '@/auth';
+import { withTenant } from '@/lib/tenant';
+import { PageHeader } from '@/components/PageHeader';
+import { TermForm } from './TermsForm';
+import { redirect } from 'next/navigation';
+import { setActiveTerm } from './actions';
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default async function TermsPage() {
   const session = await auth();
-  const terms = await prisma.term.findMany({
-    where: { schoolId: session!.user.schoolId },
-    orderBy: { createdAt: 'desc' },
+
+  if (!session?.user?.schoolId) {
+    redirect('/login');
+  }
+
+  // Fetch data USING TENANT (this prevents RLS from blocking it)
+  const terms = await withTenant(session.user.schoolId, async (tx) => {
+    return tx.term.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
   });
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader title="Academic Terms" description="Manage sessions and terms" />
 
-      <form
-        action={createTerm}
-        className="shadow-soft mb-8 flex flex-wrap gap-2 rounded-lg border bg-white p-4"
-      >
-        <Input
-          name="session"
-          placeholder="Session (e.g. 2025/2026)"
-          required
-          className="max-w-[200px]"
-        />
-        <Input
-          name="name"
-          placeholder="Term (e.g. First Term)"
-          required
-          className="max-w-[200px]"
-        />
-        <SubmitButton>Add Term</SubmitButton>
-      </form>
+      <TermForm />
 
       <div className="shadow-soft overflow-hidden rounded-lg border bg-white">
-        <table className="w-full">
-          <thead className="bg-secondary/50 text-muted-foreground border-b text-left text-xs tracking-wider uppercase">
+        <table className="w-full text-left">
+          <thead className="bg-secondary/50 text-muted-foreground border-b text-xs tracking-wider uppercase">
             <tr>
               <th className="px-6 py-3">Session</th>
               <th className="px-6 py-3">Term</th>
@@ -46,44 +38,46 @@ export default async function TermsPage() {
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {terms.length === 0 && (
+          <tbody className="divide-y divide-gray-100">
+            {terms.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-muted-foreground px-6 py-12 text-center text-sm">
                   No terms added yet. Create one to begin entering scores.
                 </td>
               </tr>
+            ) : (
+              terms.map((t) => (
+                <tr key={t.id} className="transition-colors hover:bg-gray-50/50">
+                  <td className="px-6 py-4 text-sm font-medium">{t.session}</td>
+                  <td className="px-6 py-4 text-sm">{t.name}</td>
+                  <td className="px-6 py-4 text-sm">
+                    {t.isActive ? (
+                      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-500/10 ring-inset">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {!t.isActive && (
+                      <form
+                        action={async () => {
+                          'use server';
+                          await setActiveTerm(t.id);
+                        }}
+                      >
+                        <SubmitButton variant="outline" size="sm">
+                          Set Active
+                        </SubmitButton>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))
             )}
-            {terms.map((t) => (
-              <tr key={t.id} className="border-b last:border-0">
-                <td className="px-6 py-4 text-sm">{t.session}</td>
-                <td className="px-6 py-4 text-sm">{t.name}</td>
-                <td className="px-6 py-4">
-                  {t.isActive ? (
-                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold tracking-wider text-green-700 uppercase">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs tracking-wider text-gray-500 uppercase">
-                      Inactive
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  {!t.isActive && (
-                    <form
-                      action={async () => {
-                        await setActiveTerm(t.id);
-                      }}
-                    >
-                      <SubmitButton variant="outline" size="sm">
-                        Set Active
-                      </SubmitButton>
-                    </form>
-                  )}
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>

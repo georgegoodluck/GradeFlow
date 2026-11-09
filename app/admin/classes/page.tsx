@@ -1,17 +1,23 @@
+export const dynamic = 'force-dynamic';
+
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { withTenant } from '@/lib/tenant'; // <--- Use tenant!
 import { PageHeader } from '@/components/PageHeader';
 import { createClass } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 
 export default async function ClassesPage() {
   const session = await auth();
-  const classes = await prisma.class.findMany({
-    where: { schoolId: session!.user.schoolId },
-    orderBy: { name: 'asc' },
-    include: { _count: { select: { students: true } } },
+  if (!session?.user?.schoolId) redirect('/login');
+
+  // 1. WE MUST USE withTenant HERE
+  const classes = await withTenant(session.user.schoolId, async (tx) => {
+    return tx.class.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { students: true } } },
+    });
   });
 
   return (
