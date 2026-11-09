@@ -17,10 +17,11 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users    User[]
-  students Student[]
-  classes  Class[]
-  subjects Subject[]
+  users           User[]
+  students        Student[]
+  classes         Class[]
+  subjects        Subject[]
+  teacherSubjects TeacherSubject[]
 }
 
 enum Role {
@@ -40,8 +41,9 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  school  School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student Student?
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student         Student?
+  teacherSubjects TeacherSubject[]
 
   @@index([schoolId])
 }
@@ -73,8 +75,9 @@ model Class {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school   School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  students Student[]
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students        Student[]
+  teacherSubjects TeacherSubject[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -87,8 +90,26 @@ model Subject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacherSubjects TeacherSubject[]
 
   @@unique([schoolId, name])
+  @@index([schoolId])
+}
+
+model TeacherSubject {
+  id        String   @id @default(cuid())
+  schoolId  String
+  teacherId String
+  subjectId String
+  classId   String
+  createdAt DateTime @default(now())
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, subjectId, classId])
   @@index([schoolId])
 }
