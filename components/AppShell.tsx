@@ -9,6 +9,7 @@ const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
     { href: '/admin/subjects', label: 'Subjects' },
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/assignments', label: 'Assignments' },
+    { href: '/admin/terms', label: 'Terms' },
   ],
   ADMIN: [
     { href: '/admin', label: 'Overview' },
@@ -16,6 +17,7 @@ const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
     { href: '/admin/subjects', label: 'Subjects' },
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/assignments', label: 'Assignments' },
+    { href: '/admin/terms', label: 'Terms' },
   ],
   TEACHER: [
     { href: '/teacher', label: 'My Subjects' },
