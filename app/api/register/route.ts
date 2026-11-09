@@ -21,28 +21,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
-    // 1. Pre-flight checks (School and global email checks outside tenant context)
+    // 1. Check if email exists
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
 
+    // 2. Check if slug exists
     const slugTaken = await prisma.school.findUnique({ where: { slug } });
     if (slugTaken) {
       return NextResponse.json({ error: 'School slug taken' }, { status: 409 });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // 2. Create the school entity first (RLS disabled or non-tenant table)
+    // 3. Create the school (No RLS on this table)
     const school = await prisma.school.create({
-      data: {
-        name: schoolName,
-        slug,
-      },
+      data: { name: schoolName, slug },
     });
 
-    // 3. Perform tenant-scoped writes inside withTenant so session variables/RLS policies are satisfied
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 4. Create user and classes inside tenant context
     await withTenant(school.id, async (tx) => {
       await tx.user.create({
         data: {
@@ -55,18 +53,15 @@ export async function POST(req: Request) {
       });
 
       await tx.class.createMany({
-        data: PRIMARY_CLASSES.map((c) => ({
-          schoolId: school.id,
-          name: c,
-        })),
+        data: PRIMARY_CLASSES.map((c) => ({ schoolId: school.id, name: c })),
       });
     });
 
     return NextResponse.json({ schoolId: school.id }, { status: 201 });
-  } catch (error) {
-    console.error('Registration failed:', error);
+  } catch (error: any) {
+    console.error('REGISTRATION ERROR:', error); // This will print in your terminal
     return NextResponse.json(
-      { error: 'An unexpected error occurred during registration.' },
+      { error: error.message || 'An unexpected error occurred during registration.' },
       { status: 500 },
     );
   }
