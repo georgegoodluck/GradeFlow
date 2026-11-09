@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubmitButton } from '@/components/SubmitButton';
+import { Input } from '@/components/ui/input';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ schoolName: '', slug: '', name: '', email: '', password: '' });
+  // Removed slug from state
+  const [form, setForm] = useState({ schoolName: '', name: '', email: '', password: '' });
   const [error, setError] = useState('');
 
   function update(key: string, value: string) {
@@ -37,27 +39,34 @@ export default function RegisterPage() {
       >
         <h1 className="text-2xl font-semibold">Register your school</h1>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        {(['schoolName', 'slug', 'name', 'email', 'password'] as const).map((key) => (
-          <input
-            key={key}
-            type={key === 'password' ? 'password' : key === 'email' ? 'email' : 'text'}
-            placeholder={
-              key === 'schoolName'
-                ? 'School name'
-                : key === 'slug'
-                  ? 'URL slug (e.g. greenwood)'
-                  : key === 'name'
-                    ? 'Your name'
-                    : key === 'email'
-                      ? 'Email'
-                      : 'Password'
-            }
-            value={form[key]}
-            onChange={(e) => update(key, e.target.value)}
-            className="w-full rounded border px-3 py-2"
-            required
-          />
-        ))}
+
+        <Input
+          placeholder="School name (e.g. Hogwarts)"
+          value={form.schoolName}
+          onChange={(e) => update('schoolName', e.target.value)}
+          required
+        />
+        <Input
+          placeholder="Your name"
+          value={form.name}
+          onChange={(e) => update('name', e.target.value)}
+          required
+        />
+        <Input
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={(e) => update('email', e.target.value)}
+          required
+        />
+        <Input
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) => update('password', e.target.value)}
+          required
+        />
+
         <SubmitButton className="w-full rounded bg-black py-2 text-white">
           Create school
         </SubmitButton>
