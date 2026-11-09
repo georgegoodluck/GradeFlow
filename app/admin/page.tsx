@@ -1,15 +1,22 @@
+export const dynamic = 'force-dynamic';
+
 import { PageHeader } from '@/components/PageHeader';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
-export const dynamic = 'force-dynamic';
+import { withTenant } from '@/lib/tenant';
+import { redirect } from 'next/navigation';
 
 export default async function AdminHome() {
   const session = await auth();
-  const school = await prisma.school.findUnique({
-    where: { id: session!.user.schoolId },
-    include: {
-      _count: { select: { students: true, users: true, classes: true, subjects: true } },
-    },
+  if (!session?.user?.schoolId) redirect('/login');
+
+  // Use withTenant to get accurate counts
+  const school = await withTenant(session.user.schoolId, async (tx) => {
+    return tx.school.findUnique({
+      where: { id: session.user.schoolId },
+      include: {
+        _count: { select: { students: true, users: true, classes: true, subjects: true } },
+      },
+    });
   });
 
   const stats = [
