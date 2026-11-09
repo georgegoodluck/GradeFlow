@@ -9,9 +9,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function ScoresPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect('/login');
-  const schoolId = session.user.schoolId;
-  const role = session.user.role;
+  if (!session?.staff?.schoolId) redirect('/login');
+  const schoolId = session.staff.schoolId;
+  const role = session.staff.role;
 
   // 1–3. Fetch active term, assignments, and students — all inside withTenant
   const { activeTerm, assignments, students } = await withTenant(schoolId, async (tx) => {
@@ -25,7 +25,7 @@ export default async function ScoresPage() {
 
     const assignments = await tx.teacherSubject.findMany({
       where: {
-        ...(role === 'TEACHER' ? { teacherId: session.user.id } : {}),
+        ...(role === 'TEACHER' ? { staffId: session.staff.id } : {}),
       },
       include: { subject: true, class: true },
     });
