@@ -58,11 +58,11 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ schoolId: school.id }, { status: 201 });
-  } catch (error: any) {
-    console.error('REGISTRATION ERROR:', error); // This will print in your terminal
-    return NextResponse.json(
-      { error: error.message || 'An unexpected error occurred during registration.' },
-      { status: 500 },
-    );
+  } catch (error: unknown) {
+    console.error('REGISTRATION ERROR:', error);
+    const message =
+      error instanceof Error ? error.message : 'An unexpected error occurred during registration.';
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
