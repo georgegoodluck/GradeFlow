@@ -5,6 +5,7 @@ import { SignOutButton } from './SignOutButton';
 const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
   OWNER: [
     { href: '/admin', label: 'Overview' },
+    { href: '/admin/students', label: 'Students' },
     { href: '/admin/classes', label: 'Classes' },
     { href: '/admin/subjects', label: 'Subjects' },
     { href: '/admin/users', label: 'Users' },
@@ -18,6 +19,7 @@ const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/assignments', label: 'Assignments' },
     { href: '/admin/terms', label: 'Terms' },
+    { href: '/admin/students', label: 'Students' },
   ],
   TEACHER: [
     { href: '/teacher', label: 'My Subjects' },
