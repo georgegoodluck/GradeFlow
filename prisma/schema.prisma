@@ -31,7 +31,6 @@ enum Role {
   OWNER
   ADMIN
   TEACHER
-  STUDENT
 }
 
 model User {
@@ -45,7 +44,6 @@ model User {
   updatedAt    DateTime @updatedAt
 
   school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student         Student?
   teacherSubjects TeacherSubject[]
 
   @@index([schoolId])
@@ -54,17 +52,16 @@ model User {
 model Student {
   id          String   @id @default(cuid())
   schoolId    String
-  userId      String?  @unique
   firstName   String
   lastName    String
   admissionNo String
+  passwordHash String
   classId     String
-  overallPosition Int?  // ← Add this line
+  overallPosition Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   school School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   class  Class   @relation(fields: [classId], references: [id], onDelete: Restrict)
   scores Score[]
   termResults StudentTermResult[]
