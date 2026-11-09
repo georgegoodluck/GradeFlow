@@ -10,10 +10,19 @@ export async function createClass(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   if (!name) throw new Error('Name required');
 
-  await withTenant(session.user.schoolId, async (tx) => {
-    await tx.class.create({
-      data: { schoolId: session.user.schoolId, name },
+  try {
+    await withTenant(session.user.schoolId, async (tx) => {
+      await tx.class.create({
+        data: { schoolId: session.user.schoolId, name },
+      });
     });
-  });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      throw new Error('A class with this name already exists.');
+    }
+    throw new Error('Failed to create class.');
+  }
+
   revalidatePath('/admin/classes');
 }
+  
