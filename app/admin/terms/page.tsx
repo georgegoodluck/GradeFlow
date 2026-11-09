@@ -7,6 +7,7 @@ import { TermForm } from './TermsForm';
 import { redirect } from 'next/navigation';
 import { setActiveTerm } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
+import { calculateRankings } from './ranking';
 
 export default async function TermsPage() {
   const session = await auth();
@@ -15,11 +16,18 @@ export default async function TermsPage() {
     redirect('/login');
   }
 
-  // Fetch data USING TENANT (this prevents RLS from blocking it)
-  const terms = await withTenant(session.user.schoolId, async (tx) => {
-    return tx.term.findMany({
+  // Fetch terms and a sample student for the PDF test
+  const { terms, sampleStudentId } = await withTenant(session.user.schoolId, async (tx) => {
+    const terms = await tx.term.findMany({
       orderBy: { createdAt: 'desc' },
     });
+
+    // Fetch just one student ID to use for the sample PDF link
+    const student = await tx.student.findFirst({
+      select: { id: true },
+    });
+
+    return { terms, sampleStudentId: student?.id };
   });
 
   return (
@@ -62,7 +70,33 @@ export default async function TermsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {!t.isActive && (
+                    {t.isActive ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <form
+                          action={async () => {
+                            'use server';
+                            await calculateRankings(t.id);
+                          }}
+                        >
+                          <SubmitButton variant="secondary" size="sm">
+                            Finalize Rankings
+                          </SubmitButton>
+                        </form>
+
+                        {sampleStudentId && (
+                          <a
+                            href={`/api/reports/${sampleStudentId}/${t.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {/* We use Button asChild if you are using shadcn, otherwise just style a regular link */}
+                            <SubmitButton variant="outline" size="sm">
+                              Download Sample PDF
+                            </SubmitButton>
+                          </a>
+                        )}
+                      </div>
+                    ) : (
                       <form
                         action={async () => {
                           'use server';
