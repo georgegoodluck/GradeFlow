@@ -59,6 +59,7 @@ model Student {
   lastName    String
   admissionNo String
   classId     String
+  overallPosition Int?  // ← Add this line
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
