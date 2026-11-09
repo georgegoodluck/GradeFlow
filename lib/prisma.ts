@@ -1,11 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@/generated/prisma/client';
 import { PrismaNeon } from '@prisma/adapter-neon';
-import { neonConfig } from '@neondatabase/serverless';
-import ws from 'ws';
-import 'server-only';
-
-neonConfig.webSocketConstructor = ws;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -14,6 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   const adapter = new PrismaNeon({
     connectionString: process.env.DATABASE_URL!,
+    connectionTimeoutMillis: 30000, // 30 seconds to survive Neon cold starts
   });
   return new PrismaClient({ adapter });
 }
