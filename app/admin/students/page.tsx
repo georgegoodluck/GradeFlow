@@ -10,16 +10,17 @@ import { redirect } from 'next/navigation';
 
 export default async function StudentsPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect('/login');
+  if (!session?.staff?.schoolId) redirect('/login');
 
-  // Fetch classes and students using RLS
-  const { classes, students } = await withTenant(session.user.schoolId, async (tx) => {
+  // Fetch classes, students, and the active term using RLS
+  const { classes, students, activeTerm } = await withTenant(session.staff.schoolId, async (tx) => {
     const classes = await tx.class.findMany({ orderBy: { name: 'asc' } });
     const students = await tx.student.findMany({
       orderBy: { lastName: 'asc' },
       include: { class: true },
     });
-    return { classes, students };
+    const activeTerm = await tx.term.findFirst({ where: { isActive: true } });
+    return { classes, students, activeTerm };
   });
 
   return (
@@ -58,6 +59,7 @@ export default async function StudentsPage() {
               <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Admission No</th>
               <th className="px-6 py-3">Class</th>
+              <th className="px-6 py-3 text-right">Report Card</th>
             </tr>
           </thead>
           <tbody>
@@ -68,11 +70,25 @@ export default async function StudentsPage() {
                 </td>
                 <td className="px-6 py-4 text-sm">{s.admissionNo}</td>
                 <td className="px-6 py-4 text-sm">{s.class.name}</td>
+                <td className="px-6 py-4 text-right text-sm">
+                  {activeTerm ? (
+                    <a
+                      href={`/api/reports/${s.id}/${activeTerm.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
+                    >
+                      Download Report Card
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No active term</span>
+                  )}
+                </td>
               </tr>
             ))}
             {students.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-muted-foreground px-6 py-12 text-center text-sm">
+                <td colSpan={4} className="text-muted-foreground px-6 py-12 text-center text-sm">
                   No students yet. Add one above.
                 </td>
               </tr>
