@@ -6,14 +6,14 @@ import { withTenant } from '@/lib/tenant';
 
 export async function assignTeacher(formData: FormData) {
   const session = await auth();
-  if (!session?.user) throw new Error('Unauthorized');
-  const teacherId = String(formData.get('teacherId'));
+  if (!session?.staff) throw new Error('Unauthorized');
+  const staffId = String(formData.get('staffId'));
   const subjectId = String(formData.get('subjectId'));
   const classId = String(formData.get('classId'));
 
-  await withTenant(session.user.schoolId, async (tx) => {
+  await withTenant(session.staff.schoolId, async (tx) => {
     await tx.teacherSubject.create({
-      data: { schoolId: session.user.schoolId, teacherId, subjectId, classId },
+      data: { schoolId: session.staff.schoolId, staffId, subjectId, classId },
     });
   });
   revalidatePath('/admin/assignments');
@@ -21,8 +21,8 @@ export async function assignTeacher(formData: FormData) {
 
 export async function unassignTeacher(id: string) {
   const session = await auth();
-  if (!session?.user) throw new Error('Unauthorized');
-  await withTenant(session.user.schoolId, async (tx) => {
+  if (!session?.staff) throw new Error('Unauthorized');
+  await withTenant(session.staff.schoolId, async (tx) => {
     await tx.teacherSubject.delete({ where: { id } });
   });
   revalidatePath('/admin/assignments');
