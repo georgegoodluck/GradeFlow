@@ -1,5 +1,20 @@
 import { AppShell } from '@/components/AppShell';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
+
+  // Check if onboarding is complete
+  const school = await prisma.school.findUnique({
+    where: { id: session.user.schoolId },
+  });
+
+  if (!school?.isSetup) {
+    redirect('/onboarding');
+  }
+
   return <AppShell>{children}</AppShell>;
 }
