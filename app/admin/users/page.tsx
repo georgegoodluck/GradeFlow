@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { createUser } from './actions';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
 
 export default async function UsersPage() {
@@ -26,7 +26,7 @@ export default async function UsersPage() {
           <option value="TEACHER">Teacher</option>
           <option value="ADMIN">Admin</option>
         </select>
-        <Button type="submit">Add user</Button>
+        <SubmitButton>Add user</SubmitButton>
       </form>
       <div className="shadow-soft overflow-hidden rounded-lg border bg-white">
         <table className="w-full">

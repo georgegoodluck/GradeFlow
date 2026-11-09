@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { saveScore } from './actions';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
 
 export default async function ScoresPage() {
@@ -133,9 +133,9 @@ export default async function ScoresPage() {
                             />
                           </td>
                           <td className="px-6 py-3 text-right">
-                            <Button size="sm" type="submit" variant="outline">
+                            <SubmitButton size="sm" variant="outline">
                               Save
-                            </Button>
+                            </SubmitButton>
                           </td>
                         </form>
                       </tr>

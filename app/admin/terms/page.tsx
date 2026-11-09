@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { createTerm, setActiveTerm } from './actions';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
 
 export default async function TermsPage() {
@@ -32,7 +32,7 @@ export default async function TermsPage() {
           required
           className="max-w-[200px]"
         />
-        <Button type="submit">Add Term</Button>
+        <SubmitButton>Add Term</SubmitButton>
       </form>
 
       <div className="shadow-soft overflow-hidden rounded-lg border bg-white">
@@ -75,9 +75,9 @@ export default async function TermsPage() {
                         await setActiveTerm(t.id);
                       }}
                     >
-                      <Button variant="outline" size="sm" type="submit">
+                      <SubmitButton variant="outline" size="sm">
                         Set Active
-                      </Button>
+                      </SubmitButton>
                     </form>
                   )}
                 </td>

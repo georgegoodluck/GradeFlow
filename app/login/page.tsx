@@ -3,6 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,9 +51,7 @@ export default function LoginPage() {
           className="w-full rounded border px-3 py-2"
           required
         />
-        <button type="submit" className="w-full rounded bg-black py-2 text-white">
-          Sign in
-        </button>
+        <SubmitButton className="w-full rounded bg-black py-2 text-white">Sign in</SubmitButton>
       </form>
     </div>
   );

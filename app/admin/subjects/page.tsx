@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { createSubject, deleteSubject } from './actions';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
 
 export default async function SubjectsPage() {
@@ -17,7 +17,7 @@ export default async function SubjectsPage() {
       <PageHeader title="Subjects" description="The subjects taught at your school" />
       <form action={createSubject} className="mb-6 flex gap-2">
         <Input name="name" placeholder="e.g. Mathematics" required className="max-w-xs" />
-        <Button type="submit">Add subject</Button>
+        <SubmitButton>Add subject</SubmitButton>
       </form>
       <div className="shadow-soft overflow-hidden rounded-lg border bg-white">
         <table className="w-full">
@@ -44,9 +44,9 @@ export default async function SubjectsPage() {
                       await deleteSubject(s.id);
                     }}
                   >
-                    <Button variant="ghost" size="sm" type="submit">
+                    <SubmitButton variant="ghost" size="sm">
                       Delete
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </td>
               </tr>

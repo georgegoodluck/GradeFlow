@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { assignTeacher, unassignTeacher } from './actions';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default async function AssignmentsPage() {
   const session = await auth();
@@ -32,31 +32,52 @@ export default async function AssignmentsPage() {
         action={assignTeacher}
         className="shadow-soft mb-8 grid grid-cols-1 gap-2 rounded-lg border bg-white p-4 md:grid-cols-4"
       >
-        <select name="teacherId" required className="rounded-md border bg-white px-3 py-2 text-sm">
-          <option value="">Select teacher…</option>
+        <select
+          name="teacherId"
+          required
+          className="rounded-md border bg-white px-3 py-2 text-sm"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Select teacher…
+          </option>
           {teachers.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
             </option>
           ))}
         </select>
-        <select name="subjectId" required className="rounded-md border bg-white px-3 py-2 text-sm">
-          <option value="">Select subject…</option>
+        <select
+          name="subjectId"
+          required
+          className="rounded-md border bg-white px-3 py-2 text-sm"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Select subject…
+          </option>
           {subjects.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
           ))}
         </select>
-        <select name="classId" required className="rounded-md border bg-white px-3 py-2 text-sm">
-          <option value="">Select class…</option>
+        <select
+          name="classId"
+          required
+          className="rounded-md border bg-white px-3 py-2 text-sm"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Select class…
+          </option>
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
         </select>
-        <Button type="submit">Assign</Button>
+        <SubmitButton>Assign Teacher</SubmitButton>
       </form>
 
       <div className="shadow-soft overflow-hidden rounded-lg border bg-white">
@@ -85,12 +106,13 @@ export default async function AssignmentsPage() {
                 <td className="px-6 py-4 text-right">
                   <form
                     action={async () => {
+                      'use server';
                       await unassignTeacher(a.id);
                     }}
                   >
-                    <Button variant="ghost" size="sm" type="submit">
+                    <SubmitButton variant="ghost" size="sm">
                       Remove
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </td>
               </tr>

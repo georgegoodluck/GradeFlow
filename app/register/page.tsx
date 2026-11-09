@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,9 +58,9 @@ export default function RegisterPage() {
             required
           />
         ))}
-        <button type="submit" className="w-full rounded bg-black py-2 text-white">
+        <SubmitButton className="w-full rounded bg-black py-2 text-white">
           Create school
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

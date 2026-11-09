@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { createClass } from './actions';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
 
 export default async function ClassesPage() {
@@ -19,7 +19,7 @@ export default async function ClassesPage() {
 
       <form action={createClass} className="mb-6 flex gap-2">
         <Input name="name" placeholder="e.g. JSS 1A, Primary 1" required className="max-w-xs" />
-        <Button type="submit">Add Class</Button>
+        <SubmitButton>Add Class</SubmitButton>
       </form>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
