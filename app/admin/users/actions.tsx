@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import { auth } from '@/auth';
 import { withTenant } from '@/lib/tenant';
+import { prisma } from '@/lib/prisma';
 
 export async function createUser(formData: FormData) {
   const session = await auth();
@@ -16,6 +17,12 @@ export async function createUser(formData: FormData) {
   const role = String(formData.get('role') ?? 'TEACHER') as 'ADMIN' | 'TEACHER';
 
   if (!name || !email || password.length < 6) throw new Error('Invalid input');
+
+  // Pre-check to prevent ugly Prisma errors
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw new Error('A user with this email already exists.');
+  }
 
   const passwordHash = await bcrypt.hash(password, 10);
 
