@@ -7,21 +7,21 @@ import { redirect } from 'next/navigation';
 
 export default async function AdminHome() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect('/login');
+  if (!session?.staff?.schoolId) redirect('/login');
 
   // Use withTenant to get accurate counts
-  const school = await withTenant(session.user.schoolId, async (tx) => {
+  const school = await withTenant(session.staff.schoolId, async (tx) => {
     return tx.school.findUnique({
-      where: { id: session.user.schoolId },
+      where: { id: session.staff.schoolId },
       include: {
-        _count: { select: { students: true, users: true, classes: true, subjects: true } },
+        _count: { select: { students: true, staffs: true, classes: true, subjects: true } },
       },
     });
   });
 
   const stats = [
     { label: 'Students', value: school?._count.students ?? 0 },
-    { label: 'Staff', value: school?._count.users ?? 0 },
+    { label: 'Staff', value: school?._count.staffs ?? 0 },
     { label: 'Classes', value: school?._count.classes ?? 0 },
     { label: 'Subjects', value: school?._count.subjects ?? 0 },
   ];
