@@ -22,6 +22,7 @@ const NAV_BY_ROLE: Record<string, { href: string; label: string }[]> = {
   TEACHER: [
     { href: '/teacher', label: 'My Subjects' },
     { href: '/teacher/scores', label: 'Enter Scores' },
+    { href: '/teacher/scores', label: 'Enter Scores' },
   ],
   STUDENT: [{ href: '/student', label: 'My Results' }],
 };
