@@ -22,6 +22,7 @@ model School {
   classes         Class[]
   subjects        Subject[]
   teacherSubjects TeacherSubject[]
+  terms           Term[]
 }
 
 enum Role {
@@ -111,5 +112,20 @@ model TeacherSubject {
   class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, subjectId, classId])
+  @@index([schoolId])
+}
+
+model Term {
+  id        String   @id @default(cuid())
+  schoolId  String
+  session   String
+  name      String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, session, name])
   @@index([schoolId])
 }
