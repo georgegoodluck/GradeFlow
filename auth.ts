@@ -15,22 +15,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // CHANGED: Use prismaAuth here so RLS doesn't block the lookup
-        const user = await prismaAuth.user.findUnique({
+        // CHANGE FROM user TO staff
+        const staff = await prismaAuth.staff.findUnique({
           where: { email: credentials.email as string },
         });
 
-        if (!user) return null;
+        if (!staff) return null;
 
-        const valid = await bcrypt.compare(credentials.password as string, user.passwordHash);
+        const valid = await bcrypt.compare(credentials.password as string, staff.passwordHash);
         if (!valid) return null;
 
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          schoolId: user.schoolId,
+          id: staff.id,
+          email: staff.email,
+          name: `${staff.firstName} ${staff.lastName}`,
+          role: staff.role,
+          schoolId: staff.schoolId,
         };
       },
     }),
