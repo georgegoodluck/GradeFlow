@@ -5,11 +5,11 @@ import { redirect } from 'next/navigation';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  if (!session?.user) redirect('/login');
+  if (!session?.staff) redirect('/login');
 
   // Check if onboarding is complete
   const school = await prisma.school.findUnique({
-    where: { id: session.user.schoolId },
+    where: { id: session.staff.schoolId }
   });
 
   if (!school?.isSetup) {
