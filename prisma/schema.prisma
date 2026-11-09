@@ -14,17 +14,17 @@ model School {
   logoUrl   String?
   address   String?
   motto     String?
+  isSetup   Boolean  @default(false) // <-- Tracks if onboarding is complete
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users           User[]
-  students        Student[]
-  classes         Class[]
-  subjects        Subject[]
+  staffs    Staff[]
+  students  Student[]
+  classes   Class[]
+  subjects  Subject[]
+  terms     Term[]
+  scores    Score[]
   teacherSubjects TeacherSubject[]
-  terms           Term[]
-  scores          Score[]
-  studentTermResults StudentTermResult[]
 }
 
 enum Role {
@@ -33,17 +33,18 @@ enum Role {
   TEACHER
 }
 
-model User {
+model Staff {
   id           String   @id @default(cuid())
   schoolId     String
   email        String   @unique
   passwordHash String
-  name         String
+  firstName    String
+  lastName     String
   role         Role     @default(TEACHER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school  School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacherSubjects TeacherSubject[]
 
   @@index([schoolId])
@@ -52,19 +53,19 @@ model User {
 model Student {
   id          String   @id @default(cuid())
   schoolId    String
+  email       String   @unique // e.g. adm001@school.local
+  passwordHash String
   firstName   String
   lastName    String
   admissionNo String
-  passwordHash String
   classId     String
   overallPosition Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  school School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  class  Class   @relation(fields: [classId], references: [id], onDelete: Restrict)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Restrict)
   scores Score[]
-  termResults StudentTermResult[]
 
   @@unique([schoolId, admissionNo])
   @@index([schoolId])
@@ -78,8 +79,8 @@ model Class {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  students        Student[]
+  school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students Student[]
   teacherSubjects TeacherSubject[]
 
   @@unique([schoolId, name])
@@ -93,9 +94,9 @@ model Subject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  scores Score[]
   teacherSubjects TeacherSubject[]
-  scores          Score[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -104,17 +105,17 @@ model Subject {
 model TeacherSubject {
   id        String   @id @default(cuid())
   schoolId  String
-  teacherId String
+  staffId   String
   subjectId String
   classId   String
   createdAt DateTime @default(now())
 
   school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  staff   Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
   subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
 
-  @@unique([teacherId, subjectId, classId])
+  @@unique([staffId, subjectId, classId])
   @@index([schoolId])
 }
 
@@ -127,9 +128,8 @@ model Term {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  scores  Score[]
-  studentTermResults StudentTermResult[]
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  scores Score[]
 
   @@unique([schoolId, session, name])
   @@index([schoolId])
@@ -145,13 +145,10 @@ model Score {
   ca2       Int      @default(0)
   ca3       Int      @default(0)
   exam      Int      @default(0)
-
-  // Computed fields
-  caAverage   Float    @default(0)
-  total       Float    @default(0)
-  grade       String?
-  subjectRank Int?     // ← rank within (subject, class, term)
-
+  caAverage Float    @default(0)
+  total     Float    @default(0)
+  grade     String?
+  subjectRank Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -162,26 +159,5 @@ model Score {
 
   @@unique([studentId, subjectId, termId])
   @@index([schoolId])
-  @@index([termId])
-  @@index([termId, subjectId, subjectRank])
-}
-
-model StudentTermResult {
-  id         String   @id @default(cuid())
-  schoolId   String
-  studentId  String
-  termId     String
-  totalScore Float    @default(0)
-  average    Float    @default(0)
-  position   Int?     // ← overall position for this student in this term
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  term    Term    @relation(fields: [termId], references: [id], onDelete: Cascade)
-
-  @@unique([studentId, termId])
-  @@index([schoolId, termId])
   @@index([termId])
 }
