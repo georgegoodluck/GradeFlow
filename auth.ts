@@ -15,23 +15,44 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // CHANGE FROM user TO staff
+        const email = credentials.email as string;
+        const password = credentials.password as string;
+
+        // 1. Check if it's a Staff member (Admin/Teacher/Owner)
         const staff = await prismaAuth.staff.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         });
 
-        if (!staff) return null;
+        if (staff) {
+          const valid = await bcrypt.compare(password, staff.passwordHash);
+          if (!valid) return null;
+          return {
+            id: staff.id,
+            email: staff.email,
+            name: `${staff.firstName} ${staff.lastName}`,
+            role: staff.role,
+            schoolId: staff.schoolId,
+          };
+        }
 
-        const valid = await bcrypt.compare(credentials.password as string, staff.passwordHash);
-        if (!valid) return null;
+        // 2. If not Staff, check if it's a Student
+        const student = await prismaAuth.student.findUnique({
+          where: { email },
+        });
 
-        return {
-          id: staff.id,
-          email: staff.email,
-          name: `${staff.firstName} ${staff.lastName}`,
-          role: staff.role,
-          schoolId: staff.schoolId,
-        };
+        if (student) {
+          const valid = await bcrypt.compare(password, student.passwordHash);
+          if (!valid) return null;
+          return {
+            id: student.id,
+            email: student.email,
+            name: `${student.firstName} ${student.lastName}`,
+            role: 'STUDENT',
+            schoolId: student.schoolId,
+          };
+        }
+
+        return null; // Neither staff nor student found
       },
     }),
   ],
