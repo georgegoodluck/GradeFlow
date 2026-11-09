@@ -3,15 +3,6 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { withTenant } from '@/lib/tenant';
 
-const PRIMARY_CLASSES = [
-  'Primary 1',
-  'Primary 2',
-  'Primary 3',
-  'Primary 4',
-  'Primary 5',
-  'Primary 6',
-];
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -40,7 +31,7 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // 4. Create user and classes inside tenant context
+    // 4. Create user inside tenant context
     await withTenant(school.id, async (tx) => {
       await tx.user.create({
         data: {
@@ -50,10 +41,6 @@ export async function POST(req: Request) {
           name,
           role: 'OWNER',
         },
-      });
-
-      await tx.class.createMany({
-        data: PRIMARY_CLASSES.map((c) => ({ schoolId: school.id, name: c })),
       });
     });
 
