@@ -23,6 +23,7 @@ model School {
   subjects        Subject[]
   teacherSubjects TeacherSubject[]
   terms           Term[]
+  scores          Score[]
 }
 
 enum Role {
@@ -60,9 +61,10 @@ model Student {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
-  class  Class  @relation(fields: [classId], references: [id], onDelete: Restrict)
+  school School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  class  Class   @relation(fields: [classId], references: [id], onDelete: Restrict)
+  scores Score[]
 
   @@unique([schoolId, admissionNo])
   @@index([schoolId])
@@ -93,6 +95,7 @@ model Subject {
 
   school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacherSubjects TeacherSubject[]
+  scores          Score[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -124,8 +127,38 @@ model Term {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  scores Score[]
 
   @@unique([schoolId, session, name])
   @@index([schoolId])
+}
+
+model Score {
+  id        String   @id @default(cuid())
+  schoolId  String
+  studentId String
+  subjectId String
+  termId    String
+  ca1       Int      @default(0)
+  ca2       Int      @default(0)
+  ca3       Int      @default(0)
+  exam      Int      @default(0)
+
+  // Computed fields
+  caAverage Float    @default(0)
+  total     Float    @default(0)
+  grade     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  term    Term    @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId, termId])
+  @@index([schoolId])
+  @@index([termId])
 }
