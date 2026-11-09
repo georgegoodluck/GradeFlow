@@ -1,5 +1,4 @@
 import { prisma } from './prisma';
-import 'server-only';
 
 export async function withTenant<T>(
   schoolId: string,
@@ -11,8 +10,8 @@ export async function withTenant<T>(
       return callback(tx);
     },
     {
-      maxWait: 15000, // wait up to 15s to acquire a connection (cold start)
-      timeout: 30000, // allow the transaction up to 30s to finish
+      maxWait: 20000, // Wait up to 20s to acquire a connection (Neon cold start)
+      timeout: 30000, // Allow the transaction 30s to finish
     },
   );
 }
