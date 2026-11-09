@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/PageHeader';
 import { assignTeacher, unassignTeacher } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
+export const dynamic = 'force-dynamic';
 
 export default async function AssignmentsPage() {
   const session = await auth();

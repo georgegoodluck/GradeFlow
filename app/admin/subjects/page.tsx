@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { createSubject, deleteSubject } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
+export const dynamic = 'force-dynamic';
 
 export default async function SubjectsPage() {
   const session = await auth();

@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { createUser } from './actions';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Input } from '@/components/ui/input';
+export const dynamic = 'force-dynamic';
 
 export default async function UsersPage() {
   const session = await auth();
