@@ -1,9 +1,13 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { Award, TrendingUp } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { scores, subjects, terms } from "@/db/schema";
-import { computeScore } from "@/lib/grading";
+import {
+  computeScore,
+  calculateGrade,
+  computeCumulativeAverage,
+} from "@/lib/grading";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +32,17 @@ export default async function StudentDashboard() {
   if (!activeTerm)
     return <div className="p-8 text-center text-gray-500">No active term.</div>;
 
-  const myScores = await db
+  const isThirdTerm = activeTerm.name.toLowerCase() === "third term";
+
+  // Fetch scores for the current term
+  let myScores = await db
     .select({
       subjectName: subjects.name,
       ca1: scores.ca1,
       ca2: scores.ca2,
       ca3: scores.ca3,
       exam: scores.exam,
+      remark: scores.remark,
     })
     .from(scores)
     .innerJoin(subjects, eq(scores.subjectId, subjects.id))
@@ -45,6 +53,81 @@ export default async function StudentDashboard() {
         eq(scores.termId, activeTerm.id),
       ),
     );
+
+  if (isThirdTerm) {
+    // Fetch all terms for this session (First, Second, Third)
+    const allTermsInSession = await db
+      .select({ id: terms.id })
+      .from(terms)
+      .where(
+        and(
+          eq(terms.schoolId, session.user.schoolId),
+          eq(terms.session, activeTerm.session),
+        ),
+      );
+
+    const termIds = allTermsInSession.map((t) => t.id);
+
+    const allSessionScores = await db
+      .select({
+        subjectId: subjects.id,
+        subjectName: subjects.name,
+        ca1: scores.ca1,
+        ca2: scores.ca2,
+        ca3: scores.ca3,
+        exam: scores.exam,
+        remark: scores.remark,
+        termId: scores.termId,
+      })
+      .from(scores)
+      .innerJoin(subjects, eq(scores.subjectId, subjects.id))
+      .where(
+        and(
+          eq(scores.schoolId, session.user.schoolId),
+          eq(scores.studentId, session.user.id),
+          inArray(scores.termId, termIds),
+        ),
+      );
+
+    // Group by subject and compute cumulative
+    const subjectMap = new Map<
+      string,
+      { subjectName: string; scores: typeof allSessionScores }
+    >();
+    for (const score of allSessionScores) {
+      if (!subjectMap.has(score.subjectId)) {
+        subjectMap.set(score.subjectId, {
+          subjectName: score.subjectName,
+          scores: [],
+        });
+      }
+      subjectMap.get(score.subjectId)!.scores.push(score);
+    }
+
+    myScores = Array.from(subjectMap.values()).map(
+      ({ subjectName, scores: subjectScores }) => {
+        const avgTotal =
+          subjectScores.reduce((sum, s) => sum + computeScore(s).total, 0) /
+          subjectScores.length;
+        return {
+          subjectName,
+          ca1:
+            subjectScores.reduce((sum, s) => sum + s.ca1, 0) /
+            subjectScores.length,
+          ca2:
+            subjectScores.reduce((sum, s) => sum + s.ca2, 0) /
+            subjectScores.length,
+          ca3:
+            subjectScores.reduce((sum, s) => sum + s.ca3, 0) /
+            subjectScores.length,
+          exam:
+            subjectScores.reduce((sum, s) => sum + s.exam, 0) /
+            subjectScores.length,
+          remark: subjectScores[subjectScores.length - 1].remark || "Good",
+        };
+      },
+    );
+  }
 
   if (myScores.length === 0) {
     return (
@@ -68,15 +151,23 @@ export default async function StudentDashboard() {
         <h2 className="font-playfair text-3xl">My Results</h2>
         <p className="text-gray-500 text-sm">
           Welcome back, {session.user.name}. Here is your performance for{" "}
-          {activeTerm.name}.
+          {isThirdTerm ? `${activeTerm.session} (Cumulative)` : activeTerm.name}
+          .
         </p>
+        {isThirdTerm && (
+          <p className="mt-2 text-xs text-gold bg-gold/10 inline-block px-3 py-1 rounded-md">
+            Cumulative average across First, Second, and Third Term.
+          </p>
+        )}
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 rounded-xl bg-charcoal p-6 shadow-soft text-white flex items-center justify-between relative overflow-hidden">
           <div className="relative z-10">
-            <p className="text-gray-400 text-sm mb-1">Overall Average</p>
+            <p className="text-gray-400 text-sm mb-1">
+              {isThirdTerm ? "Cumulative Average" : "Overall Average"}
+            </p>
             <p className="text-5xl font-playfair text-gold">{average}%</p>
           </div>
           <TrendingUp className="h-24 w-24 text-white/5 absolute right-4 bottom-4" />
@@ -115,10 +206,18 @@ export default async function StudentDashboard() {
                 <td className="p-4 font-medium text-charcoal">
                   {s.subjectName}
                 </td>
-                <td className="p-4 text-center text-gray-600">{s.ca1}</td>
-                <td className="p-4 text-center text-gray-600">{s.ca2}</td>
-                <td className="p-4 text-center text-gray-600">{s.ca3}</td>
-                <td className="p-4 text-center text-gray-600">{s.exam}</td>
+                <td className="p-4 text-center text-gray-600">
+                  {Math.round(s.ca1 * 100) / 100}
+                </td>
+                <td className="p-4 text-center text-gray-600">
+                  {Math.round(s.ca2 * 100) / 100}
+                </td>
+                <td className="p-4 text-center text-gray-600">
+                  {Math.round(s.ca3 * 100) / 100}
+                </td>
+                <td className="p-4 text-center text-gray-600">
+                  {Math.round(s.exam * 100) / 100}
+                </td>
                 <td className="p-4 text-center font-semibold text-charcoal">
                   {s.total}
                 </td>
@@ -171,19 +270,27 @@ export default async function StudentDashboard() {
             <div className="grid grid-cols-4 gap-2 text-center mb-4">
               <div className="bg-gray-50 p-2 rounded-lg">
                 <p className="text-[10px] text-gray-500 uppercase">CA1</p>
-                <p className="font-semibold text-sm">{s.ca1}</p>
+                <p className="font-semibold text-sm">
+                  {Math.round(s.ca1 * 100) / 100}
+                </p>
               </div>
               <div className="bg-gray-50 p-2 rounded-lg">
                 <p className="text-[10px] text-gray-500 uppercase">CA2</p>
-                <p className="font-semibold text-sm">{s.ca2}</p>
+                <p className="font-semibold text-sm">
+                  {Math.round(s.ca2 * 100) / 100}
+                </p>
               </div>
               <div className="bg-gray-50 p-2 rounded-lg">
                 <p className="text-[10px] text-gray-500 uppercase">CA3</p>
-                <p className="font-semibold text-sm">{s.ca3}</p>
+                <p className="font-semibold text-sm">
+                  {Math.round(s.ca3 * 100) / 100}
+                </p>
               </div>
               <div className="bg-gray-50 p-2 rounded-lg">
                 <p className="text-[10px] text-gray-500 uppercase">Exam</p>
-                <p className="font-semibold text-sm">{s.exam}</p>
+                <p className="font-semibold text-sm">
+                  {Math.round(s.exam * 100) / 100}
+                </p>
               </div>
             </div>
 
