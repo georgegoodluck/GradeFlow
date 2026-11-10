@@ -9,7 +9,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "School Grading SaaS",
+  title: "GradeFlow",
   description: "Multi-tenant school grading platform",
 };
 

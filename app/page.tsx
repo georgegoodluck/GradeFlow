@@ -30,7 +30,7 @@ export default function LandingPage() {
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-charcoal">
       <div className="z-10 max-w-2xl space-y-6 px-4 text-center">
         <h1 className="font-playfair text-5xl text-white sm:text-6xl md:text-8xl">
-          School <span className="text-gold">Grading</span>
+          Grade<span className="text-gold">Flow</span>
         </h1>
         <p className="text-base text-gray-400 sm:text-lg">
           The premium multi-tenant grading platform for modern institutions.

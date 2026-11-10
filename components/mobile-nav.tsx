@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { SidebarNav } from "./sidebar-nav";
 
-export function MobileNav({ title = "Grading SaaS" }: { title?: string }) {
+export function MobileNav({ title = "GradeFlow" }: { title?: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Lock body scroll

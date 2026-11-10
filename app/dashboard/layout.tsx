@@ -18,14 +18,14 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-soft text-charcoal">
       {/* MOBILE TOP BAR */}
       <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-charcoal px-4 text-white md:hidden">
-        <h1 className="font-playfair text-lg text-gold">Grading SaaS</h1>
-        <MobileNav title="Grading SaaS" />
+        <h1 className="font-playfair text-lg text-gold">GradeFlow</h1>
+        <MobileNav title="GradeFlow" />
       </header>
 
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden w-64 flex-col border-r border-gray-200 bg-charcoal p-6 text-white md:flex">
         <div>
-          <h1 className="font-playfair text-xl text-gold">Grading SaaS</h1>
+          <h1 className="font-playfair text-xl text-gold">GradeFlow</h1>
           <SidebarNav />
         </div>
         <div className="mt-auto border-t border-white/10 pt-6">
