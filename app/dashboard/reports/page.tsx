@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
-import { FileText } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { students, classes, terms } from "@/db/schema";
+import { students, classes, terms, subjects } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
