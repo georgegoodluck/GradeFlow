@@ -57,6 +57,12 @@ export default function DashboardLayout({
             Terms
           </a>
           <a
+            href="/dashboard/reports"
+            className="block hover:text-gold transition"
+          >
+            Reports
+          </a>
+          <a
             href="/dashboard/settings"
             className="block hover:text-gold transition"
           >
