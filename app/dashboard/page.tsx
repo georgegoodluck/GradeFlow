@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
