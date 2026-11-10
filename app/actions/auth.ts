@@ -10,7 +10,32 @@ import { schools, staff } from "@/db/schema";
 import { generateSchoolCode } from "@/lib/school-code";
 
 // ==========================================
-// LOGIN (tenant-aware)
+// FIND SCHOOL (code → login with code pre-filled)
+// ==========================================
+
+export async function findSchoolAction(formData: FormData): Promise<void> {
+  const code = formData.get("code");
+  if (typeof code !== "string" || code.trim().length === 0) {
+    redirect("/login?error=invalid");
+  }
+
+  const cleanCode = code.trim().toUpperCase();
+
+  const [school] = await authDb
+    .select({ code: schools.code })
+    .from(schools)
+    .where(eq(schools.code, cleanCode))
+    .limit(1);
+
+  if (school) {
+    redirect(`/login?schoolCode=${encodeURIComponent(school.code)}`);
+  } else {
+    redirect(`/login?error=not_found`);
+  }
+}
+
+// ==========================================
+// LOGIN (tenant-aware, code-based)
 // ==========================================
 
 export async function loginAction(formData: FormData): Promise<void> {
@@ -18,33 +43,34 @@ export async function loginAction(formData: FormData): Promise<void> {
   const password = formData.get("password");
   const schoolCode = formData.get("schoolCode");
 
-  // Determine where to send the user back on error
-  const errorRedirectPath =
-    typeof schoolCode === "string" && schoolCode.trim() !== ""
-      ? `/${schoolCode.trim()}/login?error=invalid`
-      : `/login?error=invalid`;
-
   if (
     typeof email !== "string" ||
-    email.trim() === "" ||
     typeof password !== "string" ||
-    password.trim() === "" ||
-    typeof schoolCode !== "string" ||
-    schoolCode.trim() === ""
+    typeof schoolCode !== "string"
   ) {
-    redirect(errorRedirectPath);
+    redirect("/login?error=invalid");
+  }
+
+  const cleanCode = schoolCode.trim().toUpperCase();
+
+  if (email.trim() === "" || password.trim() === "" || cleanCode === "") {
+    redirect(
+      `/login?error=invalid${cleanCode ? `&schoolCode=${encodeURIComponent(cleanCode)}` : ""}`,
+    );
   }
 
   try {
     await signIn("credentials", {
       email: email.trim(),
       password,
-      schoolCode: schoolCode.trim(),
+      schoolCode: cleanCode,
       redirectTo: "/dashboard",
     });
   } catch (error: unknown) {
     if (error instanceof AuthError) {
-      redirect(`/${schoolCode.trim()}/login?error=${error.type}`);
+      redirect(
+        `/login?error=${error.type}&schoolCode=${encodeURIComponent(cleanCode)}`,
+      );
     }
     throw error;
   }
@@ -131,6 +157,6 @@ export async function registerOwner(formData: FormData): Promise<void> {
     role: "owner",
   });
 
-  // 5. Redirect to login with the code pre-filled
-  redirect(`/login?schoolCode=${school.code}`);
+  // 5. Redirect to login with the code pre-filled + registered flag
+  redirect(`/login?schoolCode=${encodeURIComponent(school.code)}&registered=1`);
 }
