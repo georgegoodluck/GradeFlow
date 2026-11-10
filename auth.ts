@@ -40,7 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const [school] = await authDb
           .select()
           .from(schools)
-          .where(eq(schools.code, schoolCode.trim()))
+          .where(eq(schools.code, schoolCode.trim().toUpperCase()))
           .limit(1);
 
         if (!school) return null;
