@@ -1,4 +1,3 @@
-// app/student/page.tsx
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";

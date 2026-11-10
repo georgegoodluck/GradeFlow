@@ -1,4 +1,3 @@
-// components/reports/ReportCardPDF.tsx
 import React from "react";
 import {
   Document,

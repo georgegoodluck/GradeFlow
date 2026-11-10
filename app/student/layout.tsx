@@ -1,4 +1,3 @@
-// app/student/layout.tsx
 import { Award } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
 import { SignOutButton } from "@/components/SignOutButton";

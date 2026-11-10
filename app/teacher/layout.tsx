@@ -1,4 +1,3 @@
-// app/teacher/layout.tsx
 import { LayoutDashboard, PenLine } from "lucide-react";
 import Link from "next/link";
 import { MobileNav } from "@/components/MobileNav";

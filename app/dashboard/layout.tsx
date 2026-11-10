@@ -1,4 +1,3 @@
-// app/dashboard/layout.tsx
 import { SidebarNav } from "@/components/SidebarNav";
 import { MobileNav } from "@/components/MobileNav";
 import { SignOutButton } from "@/components/SignOutButton";

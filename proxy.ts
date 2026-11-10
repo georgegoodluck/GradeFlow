@@ -1,4 +1,3 @@
-// proxy.ts
 import NextAuth from "next-auth";
 import { auth } from "@/auth"; // Your auth.ts file
 import { NextResponse } from "next/server";
