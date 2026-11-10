@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { staff } from "@/db/schema";
-import { addStaffMember } from "@/app/actions/admin";
+import { AddStaffForm } from "./AddStaffForm";
 
 export default function StaffPage() {
   return (
@@ -38,41 +38,7 @@ async function StaffList() {
 
   return (
     <>
-      <form
-        action={addStaffMember}
-        className="grid gap-3 rounded-lg bg-white p-6 shadow-soft"
-      >
-        <input
-          name="name"
-          placeholder="Full name"
-          required
-          className="rounded border p-3"
-        />
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          required
-          className="rounded border p-3"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password (min 6 chars)"
-          required
-          className="rounded border p-3"
-        />
-        <select name="role" className="rounded border p-3">
-          <option value="teacher">Teacher</option>
-          <option value="admin">Admin</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded bg-gold px-6 py-2 text-charcoal"
-        >
-          Add Staff
-        </button>
-      </form>
+      <AddStaffForm />
 
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {allStaff.map((s) => (
