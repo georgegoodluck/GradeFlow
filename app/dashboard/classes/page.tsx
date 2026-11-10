@@ -1,59 +1,25 @@
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { classes } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { createClass, deleteClass } from "@/app/actions/admin";
 
-export const dynamic = "force-dynamic";
-
-async function createClass(formData: FormData) {
-  "use server";
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-
-  const name = formData.get("name");
-  if (typeof name !== "string" || name.trim().length === 0) return;
-
-  const trimmed = name.trim();
-
-  // Case-insensitive duplicate check
-  const existing = await db
-    .select({ id: classes.id })
-    .from(classes)
-    .where(
-      sql`${classes.schoolId} = ${session.user.schoolId} AND lower(${classes.name}) = lower(${trimmed})`,
-    )
-    .limit(1);
-
-  if (existing.length > 0) return;
-
-  await db.insert(classes).values({
-    schoolId: session.user.schoolId,
-    name: trimmed,
-  });
-
-  revalidatePath("/dashboard/classes");
+export default function ClassesPage() {
+  return (
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">Classes</h2>
+      <Suspense fallback={<TableSkeleton />}>
+        <ClassList />
+      </Suspense>
+    </div>
+  );
 }
 
-async function deleteClass(formData: FormData) {
-  "use server";
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-
-  const id = formData.get("id");
-  if (typeof id !== "string") return;
-
-  await db
-    .delete(classes)
-    .where(
-      sql`${classes.id} = ${id} AND ${classes.schoolId} = ${session.user.schoolId}`,
-    );
-
-  revalidatePath("/dashboard/classes");
-}
-
-export default async function ClassesPage() {
+async function ClassList() {
+  await connection(); // Forces dynamic rendering
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
@@ -63,9 +29,7 @@ export default async function ClassesPage() {
     .where(eq(classes.schoolId, session.user.schoolId));
 
   return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">Classes</h2>
-
+    <>
       <form action={createClass} className="flex gap-3">
         <input
           name="name"
@@ -97,6 +61,10 @@ export default async function ClassesPage() {
           <li className="p-4 text-gray-500">No classes yet.</li>
         )}
       </ul>
-    </div>
+    </>
   );
+}
+
+function TableSkeleton() {
+  return <div className="h-64 w-full animate-pulse rounded-lg bg-gray-200" />;
 }

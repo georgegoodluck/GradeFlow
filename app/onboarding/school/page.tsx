@@ -1,11 +1,22 @@
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
-import { saveSchoolName } from "@/app/actions/admin"
+import { saveSchoolName } from "@/app/actions/admin";
 
-export default async function SchoolStep() {
+export default function SchoolStep() {
+  return (
+    <Suspense fallback={<SchoolSkeleton />}>
+      <SchoolForm />
+    </Suspense>
+  );
+}
+
+async function SchoolForm() {
+  await connection();
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
@@ -32,4 +43,8 @@ export default async function SchoolStep() {
       </button>
     </form>
   );
+}
+
+function SchoolSkeleton() {
+  return <div className="h-40 w-full animate-pulse rounded bg-gray-200" />;
 }

@@ -1,58 +1,25 @@
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { subjects } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { createSubject, deleteSubject } from "@/app/actions/admin";
 
-export const dynamic = "force-dynamic";
-
-async function createSubject(formData: FormData) {
-  "use server";
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-
-  const name = formData.get("name");
-  if (typeof name !== "string" || name.trim().length === 0) return;
-
-  const trimmed = name.trim();
-
-  const existing = await db
-    .select({ id: subjects.id })
-    .from(subjects)
-    .where(
-      sql`${subjects.schoolId} = ${session.user.schoolId} AND lower(${subjects.name}) = lower(${trimmed})`,
-    )
-    .limit(1);
-
-  if (existing.length > 0) return;
-
-  await db.insert(subjects).values({
-    schoolId: session.user.schoolId,
-    name: trimmed,
-  });
-
-  revalidatePath("/dashboard/subjects");
+export default function SubjectsPage() {
+  return (
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">Subjects</h2>
+      <Suspense fallback={<TableSkeleton />}>
+        <SubjectList />
+      </Suspense>
+    </div>
+  );
 }
 
-async function deleteSubject(formData: FormData) {
-  "use server";
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-
-  const id = formData.get("id");
-  if (typeof id !== "string") return;
-
-  await db
-    .delete(subjects)
-    .where(
-      sql`${subjects.id} = ${id} AND ${subjects.schoolId} = ${session.user.schoolId}`,
-    );
-
-  revalidatePath("/dashboard/subjects");
-}
-
-export default async function SubjectsPage() {
+async function SubjectList() {
+  await connection();
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
@@ -62,9 +29,7 @@ export default async function SubjectsPage() {
     .where(eq(subjects.schoolId, session.user.schoolId));
 
   return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">Subjects</h2>
-
+    <>
       <form action={createSubject} className="flex gap-3">
         <input
           name="name"
@@ -96,6 +61,10 @@ export default async function SubjectsPage() {
           <li className="p-4 text-gray-500">No subjects yet.</li>
         )}
       </ul>
-    </div>
+    </>
   );
+}
+
+function TableSkeleton() {
+  return <div className="h-64 w-full animate-pulse rounded-lg bg-gray-200" />;
 }

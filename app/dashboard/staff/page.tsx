@@ -1,69 +1,25 @@
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { staff } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { hash } from "bcryptjs";
+import { addStaffMember } from "@/app/actions/admin";
 
-export const dynamic = "force-dynamic";
-
-async function addStaff(formData: FormData) {
-  "use server";
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-  if (session.user.role !== "owner" && session.user.role !== "admin") {
-    redirect("/dashboard");
-  }
-
-  const email = formData.get("email");
-  const name = formData.get("name");
-  const role = formData.get("role");
-  const password = formData.get("password");
-
-  if (
-    typeof email !== "string" ||
-    typeof name !== "string" ||
-    typeof password !== "string" ||
-    (role !== "teacher" && role !== "admin")
-  ) {
-    return;
-  }
-
-  const trimmedEmail = email.trim().toLowerCase();
-  const trimmedName = name.trim();
-
-  if (
-    trimmedEmail.length === 0 ||
-    trimmedName.length === 0 ||
-    password.length < 6
-  ) {
-    return;
-  }
-
-  // Case-insensitive duplicate check against staff AND students
-  const existingStaff = await db
-    .select({ id: staff.id })
-    .from(staff)
-    .where(sql`lower(${staff.email}) = ${trimmedEmail}`)
-    .limit(1);
-
-  if (existingStaff.length > 0) return;
-
-  const passwordHash = await hash(password, 12);
-
-  await db.insert(staff).values({
-    schoolId: session.user.schoolId,
-    email: trimmedEmail,
-    passwordHash,
-    name: trimmedName,
-    role,
-  });
-
-  revalidatePath("/dashboard/staff");
+export default function StaffPage() {
+  return (
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">Staff</h2>
+      <Suspense fallback={<TableSkeleton />}>
+        <StaffList />
+      </Suspense>
+    </div>
+  );
 }
 
-export default async function StaffPage() {
+async function StaffList() {
+  await connection();
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
   if (session.user.role !== "owner" && session.user.role !== "admin") {
@@ -81,11 +37,9 @@ export default async function StaffPage() {
     .where(eq(staff.schoolId, session.user.schoolId));
 
   return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">Staff</h2>
-
+    <>
       <form
-        action={addStaff}
+        action={addStaffMember}
         className="grid gap-3 rounded-lg bg-white p-6 shadow-soft"
       >
         <input
@@ -132,7 +86,14 @@ export default async function StaffPage() {
             </span>
           </li>
         ))}
+        {allStaff.length === 0 && (
+          <li className="p-4 text-gray-500">No staff yet.</li>
+        )}
       </ul>
-    </div>
+    </>
   );
+}
+
+function TableSkeleton() {
+  return <div className="h-64 w-full animate-pulse rounded-lg bg-gray-200" />;
 }
