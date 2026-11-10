@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { classes } from "@/db/schema";
-import { createClass, deleteClass } from "@/app/actions/admin";
+import { deleteClass } from "@/app/actions/admin";
+import { ClassForm } from "./ClassForm";
+import { ConfirmDelete } from "@/components/ConfirmDelete";
 
 export const dynamic = "force-dynamic";
 
@@ -20,20 +22,7 @@ export default async function ClassesPage() {
   return (
     <div className="space-y-6">
       <h2 className="font-playfair text-3xl">Classes</h2>
-      <form action={createClass} className="flex flex-col gap-3 sm:flex-row">
-        <input
-          name="name"
-          placeholder="Class name (e.g. JSS1)"
-          required
-          className="flex-1 rounded border p-3"
-        />
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded bg-gold px-6 py-2 text-charcoal sm:w-auto"
-        >
-          <Plus className="h-4 w-4" /> Add Class
-        </button>
-      </form>
+      <ClassForm />
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {allClasses.map((cls) => (
           <li
@@ -41,7 +30,7 @@ export default async function ClassesPage() {
             className="flex items-center justify-between gap-4 p-4"
           >
             <span className="min-w-0 truncate">{cls.name}</span>
-            <form action={deleteClass} className="shrink-0">
+            <form action={deleteClass}>
               <input type="hidden" name="id" value={cls.id} />
               <button
                 type="submit"
