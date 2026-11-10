@@ -1,68 +1,162 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { db } from "@/db";
-import { schools } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { connection } from "next/server";
+import { auth } from "@/auth";
+import { loginAction, findSchoolAction } from "@/app/actions/auth";
+import { SubmitButton } from "@/components/submit-button";
 
-async function findSchool(formData: FormData) {
-  "use server";
-  const code = formData.get("code");
-  if (typeof code !== "string" || code.trim().length === 0) return;
-
-  const cleanSlug = code.trim().toLowerCase().replace(/\s+/g, "-");
-
-  const [school] = await db
-    .select({ code: schools.code })
-    .from(schools)
-    .where(eq(schools.code, cleanSlug))
-    .limit(1);
-
-  if (school) {
-    redirect(`/${school.code}/login`);
-  } else {
-    redirect(`/login?error=not_found`);
-  }
-}
-
-export default function GenericLoginPage({
+export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    schoolCode?: string;
+    registered?: string;
+  }>;
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-charcoal p-6">
+      <Suspense
+        fallback={
+          <div className="h-[400px] w-full max-w-md animate-pulse rounded-lg bg-white/10" />
+        }
+      >
+        <LoginForm searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function LoginForm({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    error?: string;
+    schoolCode?: string;
+    registered?: string;
+  }>;
+}) {
+  await connection();
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
+
+  const params = await searchParams;
+  const hasCode =
+    typeof params.schoolCode === "string" && params.schoolCode.length > 0;
+
+  // STEP 1: No school code yet → show the "find your school" form
+  if (!hasCode) {
+    return (
       <form
-        action={findSchool}
-        className="w-full max-w-md space-y-5 rounded-2xl bg-white/5 p-10 shadow-2xl backdrop-blur-xl border border-white/10"
+        action={findSchoolAction}
+        className="w-full max-w-md space-y-5 rounded-2xl bg-white p-8 shadow-soft sm:p-10"
       >
         <div className="text-center mb-8">
-          <h1 className="text-4xl text-white font-playfair">
+          <h1 className="font-playfair text-3xl text-charcoal">
             Find Your School
           </h1>
-          <p className="text-gray-400 mt-2 text-sm">
+          <p className="text-sm text-gray-500 mt-2">
             Enter your school code to access your portal
           </p>
         </div>
 
+        {params.error === "not_found" && (
+          <p className="text-sm text-red-600 text-center">
+            School code not found. Please try again.
+          </p>
+        )}
+        {params.error === "invalid" && (
+          <p className="text-sm text-red-600 text-center">
+            Please enter a school code.
+          </p>
+        )}
+
         <input
           name="code"
-          placeholder="School Code (e.g. Hans-academy)"
+          placeholder="School Code (e.g. GDF-RA-48291)"
           required
-          className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
+          className="w-full rounded border p-3 uppercase placeholder:normal-case focus:border-gold focus:outline-none"
         />
 
-        <button
-          type="submit"
-          className="w-full rounded-lg bg-gold p-4 font-medium text-charcoal hover:bg-[#d4b573] transition shadow-[0_0_15px_rgba(198,166,100,0.3)]"
-        >
-          Continue
-        </button>
+        <SubmitButton className="w-full mt-2">Continue</SubmitButton>
 
-        <div className="text-center pt-4 border-t border-white/10 mt-6">
-          <a href="/register" className="text-sm text-gold hover:underline">
-            Register a new school
+        <div className="text-center pt-4 text-sm text-gray-500">
+          Don&apos;t have an account?{" "}
+          <a href="/register" className="text-gold hover:underline">
+            Register a school
           </a>
         </div>
       </form>
-    </div>
+    );
+  }
+
+  // STEP 2: We have a school code → show the credential form
+  return (
+    <form
+      action={loginAction}
+      className="w-full max-w-md space-y-4 rounded-2xl bg-white p-8 shadow-soft sm:p-10"
+    >
+      <div className="text-center mb-8">
+        <h1 className="font-playfair text-3xl text-charcoal">Welcome Back</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          Sign in to your school portal
+        </p>
+      </div>
+
+      {params.registered && (
+        <div className="rounded bg-green-50 p-4 text-sm text-green-700">
+          School registered successfully! Use the code below to log in.
+        </div>
+      )}
+
+      {/* Code banner — always visible so the user knows which school they're signing into */}
+      <div className="rounded bg-gold/10 border border-gold p-4 text-sm">
+        <p className="font-medium text-charcoal">School code:</p>
+        <p className="mt-1 font-mono text-lg font-bold text-gold">
+          {params.schoolCode}
+        </p>
+      </div>
+
+      {params.error === "CredentialsSignin" && (
+        <p className="text-sm text-red-600 text-center">
+          Invalid email or password.
+        </p>
+      )}
+      {params.error === "invalid" && (
+        <p className="text-sm text-red-600 text-center">
+          Please fill in all fields.
+        </p>
+      )}
+
+      <input
+        name="schoolCode"
+        defaultValue={params.schoolCode}
+        readOnly
+        className="w-full rounded border bg-gray-50 p-3 font-mono uppercase text-gray-700 focus:outline-none"
+      />
+      <input
+        name="email"
+        type="email"
+        placeholder="Email"
+        required
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+      />
+      <input
+        name="password"
+        type="password"
+        placeholder="Password"
+        required
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+      />
+
+      <SubmitButton className="w-full mt-2">Sign In</SubmitButton>
+
+      <div className="text-center pt-4 text-sm text-gray-500">
+        Wrong school?{" "}
+        <a href="/login" className="text-gold hover:underline">
+          Change code
+        </a>
+      </div>
+    </form>
   );
 }
