@@ -95,6 +95,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
+    // Safe redirect: only allow same-origin URLs, otherwise fall back to baseUrl.
+    // Role-based routing is handled in the dashboard layout guard, not here.
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   pages: {
     signIn: "/login",
