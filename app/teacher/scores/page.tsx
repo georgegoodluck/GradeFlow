@@ -4,7 +4,14 @@ import { connection } from "next/server";
 import { eq, and, inArray } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { students, scores, terms, subjects, classes } from "@/db/schema";
+import {
+  students,
+  scores,
+  terms,
+  subjects,
+  classes,
+  teacherSubjects,
+} from "@/db/schema";
 import { ScoreEntryForm } from "./ScoreEntryForm";
 
 export default function ScoresPage({
@@ -29,7 +36,7 @@ async function ScoreEntryWrapper({
 }) {
   await connection();
   const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
+  if (!session?.user?.schoolId || !session?.user?.id) redirect("/login");
 
   const params = await searchParams;
   const classId = params.classId;
@@ -38,7 +45,30 @@ async function ScoreEntryWrapper({
   if (!classId || !subjectId) {
     return (
       <div className="rounded bg-white p-6 text-red-500">
-        Invalid class or subject selected.
+        Invalid class or subject selected. Please go back and select from your
+        assignments.
+      </div>
+    );
+  }
+
+  // Verify the teacher is actually assigned to this class/subject
+  const assignment = await db
+    .select({ id: teacherSubjects.id })
+    .from(teacherSubjects)
+    .where(
+      and(
+        eq(teacherSubjects.schoolId, session.user.schoolId),
+        eq(teacherSubjects.staffId, session.user.id),
+        eq(teacherSubjects.subjectId, subjectId),
+        eq(teacherSubjects.classId, classId),
+      ),
+    )
+    .limit(1);
+
+  if (assignment.length === 0) {
+    return (
+      <div className="rounded bg-white p-6 text-red-500">
+        You are not authorized to enter scores for this class.
       </div>
     );
   }
@@ -60,16 +90,23 @@ async function ScoreEntryWrapper({
     );
   }
 
-  // Fetch class and subject names for display
+  // Fetch class and subject names for display (scoped to school)
   const [currentClass] = await db
     .select()
     .from(classes)
-    .where(eq(classes.id, classId))
+    .where(
+      and(eq(classes.id, classId), eq(classes.schoolId, session.user.schoolId)),
+    )
     .limit(1);
   const [currentSubject] = await db
     .select()
     .from(subjects)
-    .where(eq(subjects.id, subjectId))
+    .where(
+      and(
+        eq(subjects.id, subjectId),
+        eq(subjects.schoolId, session.user.schoolId),
+      ),
+    )
     .limit(1);
 
   // Fetch students in the class
