@@ -27,7 +27,10 @@ async function AssignmentGrid() {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
-  // Fetch only assignments for this specific teacher
+  // Fetch only assignments for this specific teacher.
+  // teacherSubjects.staffId references staff.id (UUID); session.user.id is
+  // the staff row's id from the credentials authorize() return value, so
+  // this is the correct join key.
   const myAssignments = await db
     .select({
       id: teacherSubjects.id,
