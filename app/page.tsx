@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { OrbWrapper } from "@/components/orb-wrapper";
+import Link from "next/link";
 
 async function goToSchool(formData: FormData) {
   "use server";
@@ -27,7 +28,7 @@ async function goToSchool(formData: FormData) {
 export default function LandingPage() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-charcoal">
-      <div className="z-10 max-w-2xl space-y-6 px-4 text-center">
+      <div className="z-10 max-w-2xl space-y-8 px-4 text-center">
         <h1 className="font-playfair text-5xl text-white sm:text-6xl md:text-8xl">
           Grade<span className="text-gold">Flow</span>
         </h1>
@@ -35,6 +36,7 @@ export default function LandingPage() {
           The premium multi-tenant grading platform for modern institutions.
         </p>
 
+        {/* School code lookup — the primary entry point */}
         <form
           action={goToSchool}
           className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"
@@ -53,11 +55,20 @@ export default function LandingPage() {
           </button>
         </form>
 
-        <div className="pt-4 text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
-          <a href="/register" className="text-gold hover:underline">
-            Register your school
-          </a>
+        {/* Secondary actions */}
+        <div className="flex flex-col justify-center gap-4 pt-2 sm:flex-row">
+          <Link
+            href="/login"
+            className="rounded-lg border border-white/20 bg-transparent px-8 py-4 font-medium text-white transition hover:bg-white/5"
+          >
+            Login to Portal
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-lg border border-white/20 bg-transparent px-8 py-4 font-medium text-white transition hover:bg-white/5"
+          >
+            Register School
+          </Link>
         </div>
       </div>
 
