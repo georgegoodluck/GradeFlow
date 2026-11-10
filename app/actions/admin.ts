@@ -4,6 +4,7 @@ import { hash } from "bcryptjs";
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { classes, subjects, staff, schools, terms } from "@/db/schema";
