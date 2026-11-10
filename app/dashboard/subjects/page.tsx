@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { subjects } from "@/db/schema";
 import { createSubject, deleteSubject } from "@/app/actions/admin";
-import { ConfirmDelete } from "@/components/ConfirmDelete";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +41,15 @@ export default async function SubjectsPage() {
             className="flex items-center justify-between gap-4 p-4 min-w-0"
           >
             <span className="min-w-0 truncate">{subj.name}</span>
-            <ConfirmDelete
-              action={deleteSubject}
-              id={subj.id}
-              label={subj.name}
-              message={`Delete "${subj.name}"? This cannot be undone.`}
-            />
+            <form action={deleteSubject} className="shrink-0">
+              <input type="hidden" name="id" value={subj.id} />
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-md bg-red-50 p-2 text-sm text-red-500 transition hover:text-red-600"
+              >
+                <Trash2 className="h-4 w-4" /> Delete
+              </button>
+            </form>
           </li>
         ))}
         {allSubjects.length === 0 && (
