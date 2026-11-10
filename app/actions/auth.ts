@@ -17,29 +17,37 @@ export async function loginAction(formData: FormData): Promise<void> {
   const password = formData.get("password");
   const schoolSlug = formData.get("schoolSlug");
 
+  // Determine where to send the user back on error
+  const errorRedirectPath =
+    typeof schoolSlug === "string" && schoolSlug.trim() !== ""
+      ? `/${schoolSlug.trim()}/login?error=invalid`
+      : `/login?error=invalid`;
+
   if (
     typeof email !== "string" ||
+    email.trim() === "" ||
     typeof password !== "string" ||
-    typeof schoolSlug !== "string"
+    password.trim() === "" ||
+    typeof schoolSlug !== "string" ||
+    schoolSlug.trim() === ""
   ) {
-    redirect(`/${schoolSlug ?? ""}/login?error=invalid`);
+    redirect(errorRedirectPath);
   }
 
   try {
     await signIn("credentials", {
-      email,
+      email: email.trim(),
       password,
-      schoolSlug,
+      schoolSlug: schoolSlug.trim(),
       redirectTo: "/dashboard",
     });
   } catch (error: unknown) {
     if (error instanceof AuthError) {
-      redirect(`/${schoolSlug}/login?error=${error.type}`);
+      redirect(`/${schoolSlug.trim()}/login?error=${error.type}`);
     }
     throw error;
   }
 }
-
 // ==========================================
 // REGISTER (owner self-signup)
 // ==========================================
