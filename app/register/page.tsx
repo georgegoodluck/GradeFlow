@@ -4,8 +4,9 @@ import { connection } from "next/server";
 import { auth } from "@/auth";
 import { registerOwner } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PasswordInput } from "@/components/PasswordInput";
 
-// Static shell — renders immediately
+// Static shell
 export default function RegisterPage({
   searchParams,
 }: {
@@ -20,17 +21,15 @@ export default function RegisterPage({
   );
 }
 
-// Dynamic child — waits for request
+// Dynamic child
 async function RegisterForm({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await connection(); // Tell Next.js 16: this is request-dependent
-
+  await connection();
   const session = await auth();
   if (session?.user) redirect("/dashboard");
-
   const params = await searchParams;
 
   return (
@@ -54,8 +53,7 @@ async function RegisterForm({
       )}
       {params.error === "code_failed" && (
         <p className="text-sm text-red-600 text-center">
-          Could not generate a unique school code. Please try a different school
-          name.
+          Could not generate a unique school code. Try a different name.
         </p>
       )}
 
@@ -73,7 +71,7 @@ async function RegisterForm({
       />
       <input
         name="headOfSchoolTitle"
-        placeholder="Head of School Title (e.g. Proprietress, Principal)"
+        placeholder="Head of School Title (e.g. Proprietress)"
         required
         className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
@@ -84,25 +82,19 @@ async function RegisterForm({
         className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
       <input
-        name="name"
-        placeholder="Your Full Name"
-        required
-        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
-      />
-      <input
         name="email"
         type="email"
         placeholder="Email"
         required
         className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
-      <input
+
+      {/* Use the Client Component for the password toggle */}
+      <PasswordInput
         name="password"
-        type="password"
         placeholder="Password"
         required
         minLength={6}
-        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
 
       <SubmitButton className="w-full">Create Account</SubmitButton>
