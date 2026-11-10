@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
-import { updateSchoolLogo } from "@/app/actions/school";
+import { updateSchoolLogo, removeSchoolLogo } from "@/app/actions/school";
 import { SubmitButton } from "@/components/submit-button";
 import Image from "next/image";
 
@@ -38,13 +38,26 @@ async function SettingsForm() {
       <div>
         <h3 className="text-lg font-medium mb-2">School Logo</h3>
         <div className="flex items-center gap-6">
-          <div className="h-24 w-24 rounded-lg border flex items-center justify-center bg-gray-50 overflow-hidden">
+          <div className="h-24 w-24 rounded-lg border flex items-center justify-center bg-gray-50 overflow-hidden relative group">
             {school?.logoUrl ? (
-              <img
-                src={school.logoUrl}
-                alt="School Logo"
-                className="h-full w-full object-contain"
-              />
+              <>
+                <img
+                  src={school.logoUrl}
+                  alt="School Logo"
+                  className="h-full w-full object-contain"
+                />
+                <form
+                  action={removeSchoolLogo}
+                  className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center"
+                >
+                  <button
+                    type="submit"
+                    className="text-white text-xs font-medium hover:underline"
+                  >
+                    Remove
+                  </button>
+                </form>
+              </>
             ) : (
               <span className="text-gray-400 text-xs">No Logo</span>
             )}
