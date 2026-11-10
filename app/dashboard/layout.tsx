@@ -67,6 +67,17 @@ async function DashboardGuard({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
+  // Students get routed to their own portal (Phase 5)
+  if (session.user.userType === "student") {
+    redirect("/student");
+  }
+
+  // Teachers get routed to the teacher portal
+  if (session.user.role === "teacher") {
+    redirect("/teacher");
+  }
+
+  // Only owners and admins reach here
   const [school] = await db
     .select({ onboardingComplete: schools.onboardingComplete })
     .from(schools)
