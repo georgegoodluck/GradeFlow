@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { eq } from "drizzle-orm";
+import { Plus, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { subjects } from "@/db/schema";
@@ -39,9 +40,9 @@ async function SubjectList() {
         />
         <button
           type="submit"
-          className="rounded bg-gold px-6 py-2 text-charcoal"
+          className="flex items-center gap-2 rounded bg-gold px-6 py-2 text-charcoal"
         >
-          Add
+          <Plus className="h-4 w-4" /> Add Subject
         </button>
       </form>
 
@@ -51,8 +52,12 @@ async function SubjectList() {
             <span>{subj.name}</span>
             <form action={deleteSubject}>
               <input type="hidden" name="id" value={subj.id} />
-              <button type="submit" className="text-sm text-red-500">
-                Delete
+              <button
+                type="submit"
+                className="p-2 text-red-500 transition hover:text-red-700"
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
               </button>
             </form>
           </li>
