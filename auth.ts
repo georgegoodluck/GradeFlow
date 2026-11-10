@@ -1,21 +1,24 @@
+// auth.ts
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { authDb } from "./db";
-import { staff, students } from "./db/schema";
+import { schools, staff, students } from "./db/schema";
 
 // Type guard for the credentials input
 function isCredentialsInput(
   value: unknown,
-): value is { email: string; password: string } {
+): value is { email: string; password: string; schoolSlug?: string } {
   return (
     typeof value === "object" &&
     value !== null &&
     "email" in value &&
     typeof (value as Record<string, unknown>).email === "string" &&
     "password" in value &&
-    typeof (value as Record<string, unknown>).password === "string"
+    typeof (value as Record<string, unknown>).password === "string" &&
+    (!("schoolSlug" in value) ||
+      typeof (value as Record<string, unknown>).schoolSlug === "string")
   );
 }
 
@@ -25,17 +28,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        schoolSlug: { label: "School", type: "text" },
       },
       async authorize(credentials: unknown) {
         if (!isCredentialsInput(credentials)) return null;
 
-        const { email, password } = credentials;
+        const { email, password, schoolSlug } = credentials;
 
-        // 1. Check staff first
+        if (!schoolSlug || schoolSlug.trim().length === 0) return null;
+
+        // 1. Resolve the school from the slug
+        const [school] = await authDb
+          .select()
+          .from(schools)
+          .where(eq(schools.slug, schoolSlug.trim()))
+          .limit(1);
+
+        if (!school) return null;
+
+        // 2. Check staff scoped to this school
         const [staffMember] = await authDb
           .select()
           .from(staff)
-          .where(eq(staff.email, email))
+          .where(and(eq(staff.email, email), eq(staff.schoolId, school.id)))
           .limit(1);
 
         if (staffMember) {
@@ -50,15 +65,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: staffMember.name,
             role: staffMember.role,
             schoolId: staffMember.schoolId,
+            schoolSlug: school.slug,
             userType: "staff" as const,
           };
         }
 
-        // 2. Check students
+        // 3. Check students scoped to this school
         const [student] = await authDb
           .select()
           .from(students)
-          .where(eq(students.email, email))
+          .where(
+            and(eq(students.email, email), eq(students.schoolId, school.id)),
+          )
           .limit(1);
 
         if (student) {
@@ -70,6 +88,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: student.name,
             role: "student" as const,
             schoolId: student.schoolId,
+            schoolSlug: school.slug,
             userType: "student" as const,
           };
         }
@@ -82,6 +101,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.schoolId = (user as { schoolId: string }).schoolId;
+        token.schoolSlug = (user as { schoolSlug: string }).schoolSlug;
         token.role = (user as { role: string }).role;
         token.userType = (user as { userType: string }).userType;
       }
@@ -90,6 +110,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.schoolId = token.schoolId as string;
+        session.user.schoolSlug = token.schoolSlug as string;
         session.user.role = token.role as string;
         session.user.userType = token.userType as string;
       }
