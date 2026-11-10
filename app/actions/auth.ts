@@ -1,7 +1,7 @@
 "use server";
 
-import { hash, compare } from "bcryptjs";
-import { eq, and } from "drizzle-orm";
+import { hash } from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
@@ -9,6 +9,9 @@ import { authDb } from "@/db";
 import { schools, staff } from "@/db/schema";
 import { generateSchoolCode } from "@/lib/school-code";
 
+// ==========================================
+// LOGIN
+// ==========================================
 export async function loginAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
   const password = formData.get("password");
@@ -39,10 +42,12 @@ export async function loginAction(formData: FormData): Promise<void> {
   }
 }
 
+// ==========================================
+// REGISTER OWNER
+// ==========================================
 export async function registerOwner(formData: FormData): Promise<void> {
   const email = formData.get("email");
   const password = formData.get("password");
-  const name = formData.get("name");
   const schoolName = formData.get("schoolName");
   const motto = formData.get("motto");
   const headOfSchoolTitle = formData.get("headOfSchoolTitle");
@@ -51,7 +56,6 @@ export async function registerOwner(formData: FormData): Promise<void> {
   if (
     typeof email !== "string" ||
     typeof password !== "string" ||
-    typeof name !== "string" ||
     typeof schoolName !== "string" ||
     typeof motto !== "string" ||
     typeof headOfSchoolTitle !== "string" ||
@@ -61,12 +65,10 @@ export async function registerOwner(formData: FormData): Promise<void> {
   }
 
   const trimmedEmail = email.trim().toLowerCase();
-  const trimmedName = name.trim();
   const trimmedSchool = schoolName.trim();
 
   if (
     trimmedEmail.length === 0 ||
-    trimmedName.length === 0 ||
     trimmedSchool.length === 0 ||
     password.length < 6
   ) {
@@ -78,8 +80,10 @@ export async function registerOwner(formData: FormData): Promise<void> {
     .from(staff)
     .where(eq(staff.email, trimmedEmail))
     .limit(1);
+
   if (existing.length > 0) redirect("/register?error=exists");
 
+  // Generate unique school code
   let finalCode = generateSchoolCode(trimmedSchool);
   let attempts = 0;
   while (attempts < 5) {
@@ -92,6 +96,8 @@ export async function registerOwner(formData: FormData): Promise<void> {
     finalCode = generateSchoolCode(trimmedSchool);
     attempts++;
   }
+
+  if (attempts >= 5) redirect("/register?error=code_failed");
 
   const passwordHash = await hash(password, 12);
 
@@ -106,18 +112,23 @@ export async function registerOwner(formData: FormData): Promise<void> {
     })
     .returning({ id: schools.id, code: schools.code });
 
+  // Use the email prefix as the fallback owner name
+  const fallbackName = trimmedEmail.split("@")[0];
+
   await authDb.insert(staff).values({
     schoolId: school.id,
     email: trimmedEmail,
     passwordHash,
-    name: trimmedName,
+    name: fallbackName,
     role: "owner",
   });
 
   redirect(`/login?schoolCode=${encodeURIComponent(school.code)}&registered=1`);
 }
 
-// FORGOT PASSWORD
+// ==========================================
+// PASSWORD RESET (Placeholders)
+// ==========================================
 export async function requestPasswordReset(formData: FormData): Promise<void> {
   const email = formData.get("email");
   if (typeof email !== "string") redirect("/login?error=invalid");
