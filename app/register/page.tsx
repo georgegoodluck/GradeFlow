@@ -1,66 +1,39 @@
-'use client';
+import { hash } from "bcryptjs";
+import { db } from "@/db";
+import { staff, schools } from "@/db/schema";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+async function register(formData: FormData) {
+  "use server";
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const name = formData.get("name") as string;
+  const schoolName = formData.get("schoolName") as string;
 
-export default function RegisterPage() {
-  const router = useRouter();
-  const [form, setForm] = useState({ schoolName: '', slug: '', name: '', email: '', password: '' });
-  const [error, setError] = useState('');
-
-  function update(key: string, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
+  // Check duplicate email
+  const existing = await db
+    .select()
+    .from(staff)
+    .where(eq(staff.email, email))
+    .limit(1);
+  if (existing.length > 0) {
+    redirect("/register?error=exists");
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || 'Registration failed');
-      return;
-    }
-    router.push('/login');
-  }
+  const passwordHash = await hash(password, 12);
+  const [school] = await db
+    .insert(schools)
+    .values({ name: schoolName })
+    .returning();
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-3 rounded-lg bg-white p-8 shadow"
-      >
-        <h1 className="text-2xl font-semibold">Register your school</h1>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {(['schoolName', 'slug', 'name', 'email', 'password'] as const).map((key) => (
-          <input
-            key={key}
-            type={key === 'password' ? 'password' : key === 'email' ? 'email' : 'text'}
-            placeholder={
-              key === 'schoolName'
-                ? 'School name'
-                : key === 'slug'
-                  ? 'URL slug (e.g. greenwood)'
-                  : key === 'name'
-                    ? 'Your name'
-                    : key === 'email'
-                      ? 'Email'
-                      : 'Password'
-            }
-            value={form[key]}
-            onChange={(e) => update(key, e.target.value)}
-            className="w-full rounded border px-3 py-2"
-            required
-          />
-        ))}
-        <button type="submit" className="w-full rounded bg-black py-2 text-white">
-          Create school
-        </button>
-      </form>
-    </div>
-  );
+  await db.insert(staff).values({
+    schoolId: school.id,
+    email,
+    passwordHash,
+    name,
+    role: "owner",
+  });
+
+  redirect("/login");
 }

@@ -1,57 +1,58 @@
-'use client';
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 
-import { signIn } from 'next-auth/react';
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-
-export default function LoginPage() {
-  const router = useRouter();
-  const params = useSearchParams();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
+async function authenticate(formData: FormData) {
+  "use server";
+  try {
+    await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirectTo: "/dashboard",
     });
-    if (res?.error) {
-      setError('Invalid email or password');
-      return;
+  } catch (error) {
+    if (error instanceof AuthError) {
+      redirect(`/login?error=${error.type}`);
     }
-    router.push(params.get('callbackUrl') || '/dashboard');
+    throw error;
   }
+}
 
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-charcoal">
       <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4 rounded-lg bg-white p-8 shadow"
+        action={authenticate}
+        className="w-full max-w-md space-y-4 rounded-lg bg-white p-8 shadow-soft"
       >
-        <h1 className="text-2xl font-semibold">Sign in</h1>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <h1 className="font-playfair text-3xl text-gold">Sign In</h1>
+        {params.error && (
+          <p className="text-red-500 text-sm">Invalid credentials</p>
+        )}
         <input
+          name="email"
           type="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded border px-3 py-2"
           required
+          className="w-full rounded border p-3"
         />
         <input
+          name="password"
           type="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded border px-3 py-2"
           required
+          className="w-full rounded border p-3"
         />
-        <button type="submit" className="w-full rounded bg-black py-2 text-white">
-          Sign in
+        <button
+          type="submit"
+          className="w-full rounded bg-gold p-3 font-inter text-charcoal"
+        >
+          Sign In
         </button>
       </form>
     </div>

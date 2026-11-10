@@ -3,8 +3,12 @@
 # dependencies
 /node_modules
 /.pnp
-.pnp.js
-.yarn/install-state.gz
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # testing
 /coverage
@@ -24,21 +28,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
-# env files — keep .env.example tracked
-.env
-.env.local
-.env.*.local
-
-# Prisma generated client (Prisma 7 outputs to generated/)
-/generated
-
-# local uploads
-/public/uploads/*
-!/public/uploads/.gitkeep
-
-# pnpm
-.pnpm-store
+# env files (can opt-in for committing if needed)
+.env*
 
 # vercel
 .vercel
