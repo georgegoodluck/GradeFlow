@@ -246,3 +246,44 @@ export async function addStaffMember(
 
   return { success: true, generatedPassword };
 }
+
+export async function createTerm(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0) return;
+
+  await db.insert(terms).values({
+    schoolId: session.user.schoolId,
+    name: name.trim(),
+    isActive: false, // Default to inactive
+  });
+
+  revalidatePath("/dashboard/terms");
+}
+
+export async function setActiveTerm(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  // Deactivate all terms for this school
+  await db
+    .update(terms)
+    .set({ isActive: false })
+    .where(eq(terms.schoolId, session.user.schoolId));
+
+  // Activate the selected term
+  await db
+    .update(terms)
+    .set({ isActive: true })
+    .where(
+      sql`${terms.id} = ${id} AND ${terms.schoolId} = ${session.user.schoolId}`,
+    );
+
+  revalidatePath("/dashboard/terms");
+  revalidatePath("/teacher/scores"); // Refresh teacher score entry
+}
