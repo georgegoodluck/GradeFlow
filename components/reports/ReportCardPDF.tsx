@@ -134,6 +134,8 @@ interface Props {
   schoolMotto: string;
   logoUrl: string | null;
   proprietressName: string;
+  headOfSchoolTitle: string;
+  headOfSchoolName: string;
   reportCardId: string;
   issueDate: string;
   student: {
@@ -163,6 +165,8 @@ export function ReportCardPDF({
   schoolMotto,
   logoUrl,
   proprietressName,
+  headOfSchoolTitle,
+  headOfSchoolName,
   reportCardId,
   issueDate,
   student,
@@ -348,7 +352,10 @@ export function ReportCardPDF({
               <Text
                 style={{ fontSize: 7, fontWeight: "bold", textAlign: "center" }}
               >
-                PROPRIETRESS SIGNATURE
+                {headOfSchoolTitle.toUpperCase()} SIGNATURE
+              </Text>
+              <Text style={{ fontSize: 7, textAlign: "center", marginTop: 2 }}>
+                {headOfSchoolName}
               </Text>
             </View>
           </View>
