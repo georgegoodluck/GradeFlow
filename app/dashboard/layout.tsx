@@ -1,4 +1,3 @@
-// app/dashboard/layout.tsx
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -6,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
+import { SidebarNav } from "@/components/sidebar-nav";
 
 export default function DashboardLayout({
   children,
@@ -14,61 +14,23 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex min-h-screen bg-soft text-charcoal">
-      <aside className="w-64 border-r border-gray-200 bg-charcoal p-6 text-white">
-        <h1 className="font-playfair text-xl text-gold">Grading SaaS</h1>
-        <nav className="mt-8 space-y-3 text-sm">
-          <a href="/dashboard" className="block hover:text-gold transition">
-            Dashboard
-          </a>
-          <a
-            href="/dashboard/classes"
-            className="block hover:text-gold transition"
-          >
-            Classes
-          </a>
-          <a
-            href="/dashboard/subjects"
-            className="block hover:text-gold transition"
-          >
-            Subjects
-          </a>
-          <a
-            href="/dashboard/staff"
-            className="block hover:text-gold transition"
-          >
-            Staff
-          </a>
-          <a
-            href="/dashboard/students"
-            className="block hover:text-gold transition"
-          >
-            Students
-          </a>
-          <a
-            href="/dashboard/assignments"
-            className="block hover:text-gold transition"
-          >
-            Assignments
-          </a>
-          <a
-            href="/dashboard/terms"
-            className="block hover:text-gold transition"
-          >
-            Terms
-          </a>
-          <a
-            href="/dashboard/reports"
-            className="block hover:text-gold transition"
-          >
-            Reports
-          </a>
-          <a
-            href="/dashboard/settings"
-            className="block hover:text-gold transition"
-          >
-            Settings
-          </a>
-        </nav>
+      <aside className="w-64 border-r border-gray-200 bg-charcoal p-6 text-white flex flex-col">
+        <div>
+          <h1 className="font-playfair text-xl text-gold">Grading SaaS</h1>
+          <SidebarNav />
+        </div>
+
+        {/* Sign out section at the bottom */}
+        <div className="mt-auto pt-6 border-t border-white/10">
+          <form action="/api/auth/signout" method="POST">
+            <button
+              type="submit"
+              className="text-sm text-gray-400 hover:text-white transition"
+            >
+              Sign Out
+            </button>
+          </form>
+        </div>
       </aside>
       <main className="flex-1 p-8">
         <Suspense fallback={<DashboardSkeleton />}>
