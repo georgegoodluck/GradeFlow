@@ -64,6 +64,7 @@ export async function loginAction(formData: FormData): Promise<void> {
       email: email.trim(),
       password,
       schoolCode: cleanCode,
+      // Keep this. The proxy will intercept and route to /teacher or /student if needed.
       redirectTo: "/dashboard",
     });
   } catch (error: unknown) {
