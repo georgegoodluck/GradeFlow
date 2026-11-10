@@ -19,6 +19,8 @@ export const staffRoleEnum = pgEnum("staff_role", [
 export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  slug: text("slug").notNull().unique(), // For the new login system (Batch 2)
+  logoUrl: text("logo_url"), // NEW
   onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -100,6 +102,7 @@ export const terms = pgTable("terms", {
     .notNull()
     .references(() => schools.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  session: text("session").notNull(), // NEW: e.g. "2024/2025"
   isActive: boolean("is_active").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
