@@ -8,12 +8,14 @@ declare module "next-auth" {
       email: string;
       name: string;
       schoolId: string;
+      schoolSlug: string;
       role: string;
       userType: string;
     };
   }
   interface User {
     schoolId: string;
+    schoolSlug: string;
     role: string;
     userType: string;
   }
