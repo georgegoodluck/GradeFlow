@@ -25,9 +25,27 @@ export async function saveSchoolName(formData: FormData): Promise<void> {
     redirect("/onboarding/school?error=empty");
   }
 
+  const trimmedName = name.trim();
+  // Generate slug: "Han's Academy" -> "hans-academy"
+  const baseSlug = trimmedName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  // Ensure uniqueness
+  const existing = await db
+    .select({ id: schools.id })
+    .from(schools)
+    .where(eq(schools.slug, baseSlug))
+    .limit(1);
+  const finalSlug =
+    existing.length > 0
+      ? `${baseSlug}-${Math.floor(Math.random() * 1000)}`
+      : baseSlug;
+
   await db
     .update(schools)
-    .set({ name: name.trim() })
+    .set({ name: trimmedName, slug: finalSlug })
     .where(eq(schools.id, session.user.schoolId));
 
   redirect("/onboarding/term");
