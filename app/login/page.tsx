@@ -1,3 +1,4 @@
+// app/login/page.tsx
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { loginAction } from "@/app/actions/auth";
@@ -16,34 +17,42 @@ export default async function LoginPage({
     <div className="flex min-h-screen items-center justify-center bg-charcoal p-6">
       <form
         action={loginAction}
-        className="w-full max-w-md space-y-4 rounded-lg bg-white p-8 shadow-soft"
+        className="w-full max-w-md space-y-5 rounded-2xl bg-white/5 p-10 shadow-2xl backdrop-blur-xl border border-white/10"
       >
-        <h1 className="font-playfair text-3xl text-charcoal">Sign In</h1>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl text-white font-playfair">Sign In</h1>
+          <p className="text-gray-400 mt-2 text-sm">
+            Welcome back to your grading portal
+          </p>
+        </div>
+
         {params.registered && (
-          <p className="text-sm text-green-700">
+          <p className="text-sm text-green-400">
             Account created. Sign in to continue.
           </p>
         )}
         {params.error && (
-          <p className="text-sm text-red-600">Invalid credentials.</p>
+          <p className="text-sm text-red-400">Invalid credentials.</p>
         )}
+
         <input
           name="email"
           type="email"
           placeholder="Email"
           required
-          className="w-full rounded border p-3"
+          className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
         />
         <input
           name="password"
           type="password"
           placeholder="Password"
           required
-          className="w-full rounded border p-3"
+          className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
         />
+
         <button
           type="submit"
-          className="w-full rounded bg-gold p-3 font-medium text-charcoal"
+          className="w-full rounded-lg bg-gold p-4 font-medium text-charcoal hover:bg-[#d4b573] transition shadow-[0_0_15px_rgba(198,166,100,0.3)]"
         >
           Sign In
         </button>
