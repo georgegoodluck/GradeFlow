@@ -7,6 +7,7 @@ import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { authDb } from "@/db";
 import { schools, staff } from "@/db/schema";
+import { generateSchoolCode } from "@/lib/school-code";
 
 // ==========================================
 // LOGIN (tenant-aware)
@@ -48,6 +49,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     throw error;
   }
 }
+
 // ==========================================
 // REGISTER (owner self-signup)
 // ==========================================
@@ -91,22 +93,26 @@ export async function registerOwner(formData: FormData): Promise<void> {
     redirect("/register?error=exists");
   }
 
-  // 2. Generate slug
-  const baseSlug = trimmedSchool
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  // 2. Generate unique school code with retry logic
+  let finalCode = generateSchoolCode(trimmedSchool);
+  let attempts = 0;
 
-  const slugExists = await authDb
-    .select({ id: schools.id })
-    .from(schools)
-    .where(eq(schools.slug, baseSlug))
-    .limit(1);
+  while (attempts < 5) {
+    const codeExists = await authDb
+      .select({ id: schools.id })
+      .from(schools)
+      .where(eq(schools.code, finalCode))
+      .limit(1);
 
-  const finalSlug =
-    slugExists.length > 0
-      ? `${baseSlug}-${Math.floor(Math.random() * 10000)}`
-      : baseSlug;
+    if (codeExists.length === 0) break;
+
+    finalCode = generateSchoolCode(trimmedSchool);
+    attempts++;
+  }
+
+  if (attempts >= 5) {
+    redirect("/register?error=code_failed");
+  }
 
   // 3. Hash password
   const passwordHash = await hash(password, 12);
@@ -114,8 +120,8 @@ export async function registerOwner(formData: FormData): Promise<void> {
   // 4. Create school + owner
   const [school] = await authDb
     .insert(schools)
-    .values({ name: trimmedSchool, slug: finalSlug })
-    .returning({ id: schools.id, slug: schools.slug });
+    .values({ name: trimmedSchool, code: finalCode })
+    .returning({ id: schools.id, code: schools.code });
 
   await authDb.insert(staff).values({
     schoolId: school.id,
@@ -125,6 +131,6 @@ export async function registerOwner(formData: FormData): Promise<void> {
     role: "owner",
   });
 
-  // 5. Redirect to the branded login
-  redirect(`/${school.slug}/login?registered=1`);
+  // 5. Redirect to login with the code pre-filled
+  redirect(`/login?schoolCode=${school.code}`);
 }
