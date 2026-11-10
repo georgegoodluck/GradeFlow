@@ -5,7 +5,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { scores, teacherSubjects, terms, students, staff } from "@/db/schema"; // Added 'staff'
+import { scores, teacherSubjects, terms, students, staff } from "@/db/schema";
+
+// Single source of truth for score limits
+const MAX_SCORES = { ca1: 40, ca2: 40, ca3: 40, exam: 60 } as const;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
 
 export async function submitScores(
   formData: FormData,
@@ -25,7 +32,7 @@ export async function submitScores(
     return { success: false, error: "Invalid request data." };
   }
 
-  // 1. Fetch the REAL staff ID using the email (Auth.js safe method)
+  // 1. Resolve real staff ID
   const [staffRecord] = await db
     .select({ id: staff.id })
     .from(staff)
@@ -41,14 +48,14 @@ export async function submitScores(
     return { success: false, error: "Staff record not found." };
   }
 
-  // 2. Verify the teacher is assigned to this subject/class using the REAL staff ID
+  // 2. Verify assignment
   const assignment = await db
     .select({ id: teacherSubjects.id })
     .from(teacherSubjects)
     .where(
       and(
         eq(teacherSubjects.schoolId, session.user.schoolId),
-        eq(teacherSubjects.staffId, staffRecord.id), // 👈 Uses the secure database UUID
+        eq(teacherSubjects.staffId, staffRecord.id),
         eq(teacherSubjects.subjectId, subjectId),
         eq(teacherSubjects.classId, classId),
       ),
@@ -62,20 +69,24 @@ export async function submitScores(
     };
   }
 
-  // ... (The rest of the function remains exactly the same)
-
-  // 3. Verify the term is active
+  // 3. Verify active term (also scope to school!)
   const [activeTerm] = await db
     .select({ id: terms.id })
     .from(terms)
-    .where(and(eq(terms.id, termId), eq(terms.isActive, true)))
+    .where(
+      and(
+        eq(terms.id, termId),
+        eq(terms.schoolId, session.user.schoolId), // 👈 scope to school
+        eq(terms.isActive, true),
+      ),
+    )
     .limit(1);
 
   if (!activeTerm) {
     return { success: false, error: "This term is not active." };
   }
 
-  // 4. Extract student data from FormData
+  // 4. Extract AND clamp scores server-side
   const studentsToUpdate: {
     studentId: string;
     ca1: number;
@@ -87,10 +98,23 @@ export async function submitScores(
   for (const [key, value] of formData.entries()) {
     if (key.startsWith("ca1_") && typeof value === "string") {
       const studentId = key.replace("ca1_", "");
-      const ca1 = parseFloat(value) || 0;
-      const ca2 = parseFloat(formData.get(`ca2_${studentId}`) as string) || 0;
-      const ca3 = parseFloat(formData.get(`ca3_${studentId}`) as string) || 0;
-      const exam = parseFloat(formData.get(`exam_${studentId}`) as string) || 0;
+
+      const ca1 = clamp(parseFloat(value) || 0, 0, MAX_SCORES.ca1);
+      const ca2 = clamp(
+        parseFloat(formData.get(`ca2_${studentId}`) as string) || 0,
+        0,
+        MAX_SCORES.ca2,
+      );
+      const ca3 = clamp(
+        parseFloat(formData.get(`ca3_${studentId}`) as string) || 0,
+        0,
+        MAX_SCORES.ca3,
+      );
+      const exam = clamp(
+        parseFloat(formData.get(`exam_${studentId}`) as string) || 0,
+        0,
+        MAX_SCORES.exam,
+      );
 
       studentsToUpdate.push({ studentId, ca1, ca2, ca3, exam });
     }
@@ -100,41 +124,62 @@ export async function submitScores(
     return { success: true };
   }
 
-  // 5. Upsert scores
-  for (const studentData of studentsToUpdate) {
-    const { studentId, ca1, ca2, ca3, exam } = studentData;
+  // 5. Defense-in-depth: verify every studentId belongs to this school AND class
+  //    (prevents a malicious client from submitting scores for other schools/classes)
+  const studentIds = studentsToUpdate.map((s) => s.studentId);
+  const validStudents = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(
+      and(
+        eq(students.schoolId, session.user.schoolId),
+        eq(students.classId, classId),
+        inArray(students.id, studentIds),
+      ),
+    );
 
-    const existing = await db
-      .select({ id: scores.id })
-      .from(scores)
-      .where(
-        and(
-          eq(scores.schoolId, session.user.schoolId),
-          eq(scores.studentId, studentId),
-          eq(scores.subjectId, subjectId),
-          eq(scores.termId, termId),
-        ),
-      )
-      .limit(1);
+  const validStudentIds = new Set(validStudents.map((s) => s.id));
 
-    if (existing.length > 0) {
-      await db
-        .update(scores)
-        .set({ ca1, ca2, ca3, exam })
-        .where(eq(scores.id, existing[0].id));
-    } else {
-      await db.insert(scores).values({
-        schoolId: session.user.schoolId,
-        studentId,
-        subjectId,
-        termId,
-        ca1,
-        ca2,
-        ca3,
-        exam,
-      });
+  // 6. Upsert (in a transaction so partial failures don't leave half-saved data)
+  await db.transaction(async (tx) => {
+    for (const studentData of studentsToUpdate) {
+      // Skip any student that failed the ownership check
+      if (!validStudentIds.has(studentData.studentId)) continue;
+
+      const { studentId, ca1, ca2, ca3, exam } = studentData;
+
+      const existing = await tx
+        .select({ id: scores.id })
+        .from(scores)
+        .where(
+          and(
+            eq(scores.schoolId, session.user.schoolId),
+            eq(scores.studentId, studentId),
+            eq(scores.subjectId, subjectId),
+            eq(scores.termId, termId),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        await tx
+          .update(scores)
+          .set({ ca1, ca2, ca3, exam })
+          .where(eq(scores.id, existing[0].id));
+      } else {
+        await tx.insert(scores).values({
+          schoolId: session.user.schoolId,
+          studentId,
+          subjectId,
+          termId,
+          ca1,
+          ca2,
+          ca3,
+          exam,
+        });
+      }
     }
-  }
+  });
 
   revalidatePath("/teacher/scores");
   return { success: true };
