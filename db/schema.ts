@@ -19,6 +19,7 @@ export const staffRoleEnum = pgEnum("staff_role", [
 export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
