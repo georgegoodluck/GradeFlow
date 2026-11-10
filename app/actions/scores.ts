@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { scores, teacherSubjects, terms, students } from "@/db/schema";
+import { scores, teacherSubjects, terms, students, staff } from "@/db/schema"; // Added 'staff'
 
 export async function submitScores(
   formData: FormData,
@@ -25,14 +25,30 @@ export async function submitScores(
     return { success: false, error: "Invalid request data." };
   }
 
-  // 1. Verify the teacher is assigned to this subject/class
+  // 1. Fetch the REAL staff ID using the email (Auth.js safe method)
+  const [staffRecord] = await db
+    .select({ id: staff.id })
+    .from(staff)
+    .where(
+      and(
+        eq(staff.schoolId, session.user.schoolId),
+        eq(staff.email, session.user.email!),
+      ),
+    )
+    .limit(1);
+
+  if (!staffRecord) {
+    return { success: false, error: "Staff record not found." };
+  }
+
+  // 2. Verify the teacher is assigned to this subject/class using the REAL staff ID
   const assignment = await db
     .select({ id: teacherSubjects.id })
     .from(teacherSubjects)
     .where(
       and(
         eq(teacherSubjects.schoolId, session.user.schoolId),
-        eq(teacherSubjects.staffId, session.user.id),
+        eq(teacherSubjects.staffId, staffRecord.id), // 👈 Uses the secure database UUID
         eq(teacherSubjects.subjectId, subjectId),
         eq(teacherSubjects.classId, classId),
       ),
@@ -46,7 +62,9 @@ export async function submitScores(
     };
   }
 
-  // 2. Verify the term is active
+  // ... (The rest of the function remains exactly the same)
+
+  // 3. Verify the term is active
   const [activeTerm] = await db
     .select({ id: terms.id })
     .from(terms)
@@ -57,7 +75,7 @@ export async function submitScores(
     return { success: false, error: "This term is not active." };
   }
 
-  // 3. Extract student data from FormData
+  // 4. Extract student data from FormData
   const studentsToUpdate: {
     studentId: string;
     ca1: number;
@@ -66,7 +84,6 @@ export async function submitScores(
     exam: number;
   }[] = [];
 
-  // Form inputs will be named like `ca1_${studentId}`, `exam_${studentId}`, etc.
   for (const [key, value] of formData.entries()) {
     if (key.startsWith("ca1_") && typeof value === "string") {
       const studentId = key.replace("ca1_", "");
@@ -80,14 +97,13 @@ export async function submitScores(
   }
 
   if (studentsToUpdate.length === 0) {
-    return { success: true }; // Nothing to update
+    return { success: true };
   }
 
-  // 4. Upsert scores
+  // 5. Upsert scores
   for (const studentData of studentsToUpdate) {
     const { studentId, ca1, ca2, ca3, exam } = studentData;
 
-    // Check if score already exists
     const existing = await db
       .select({ id: scores.id })
       .from(scores)
@@ -102,13 +118,11 @@ export async function submitScores(
       .limit(1);
 
     if (existing.length > 0) {
-      // Update
       await db
         .update(scores)
         .set({ ca1, ca2, ca3, exam })
         .where(eq(scores.id, existing[0].id));
     } else {
-      // Insert
       await db.insert(scores).values({
         schoolId: session.user.schoolId,
         studentId,
