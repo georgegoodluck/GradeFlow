@@ -55,6 +55,7 @@ export default function DashboardLayout({
           >
             Terms
           </a>
+          <a href="/dashboard/settings">Settings</a>
         </nav>
       </aside>
       <main className="flex-1 p-8">
