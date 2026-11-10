@@ -110,18 +110,19 @@ export async function GET(
         schoolName: school.name,
         schoolMotto: "KNOWLEDGE, GODLINESS AND POWER",
         logoUrl: school.logoUrl,
-        proprietressName: "Mrs. A. O. Okafor", // Placeholder
+        headOfSchoolTitle: school.headOfSchoolTitle || "Proprietress",
+        headOfSchoolName: school.headOfSchoolName || "Mrs. A. O. Okafor",
         reportCardId: `RC-${studentData.admissionNo}-${termData.session.replace("/", "")}`,
         issueDate: new Date().toLocaleDateString(),
         student: {
           name: studentData.name,
           admissionNo: studentData.admissionNo,
           className: studentData.className ?? "N/A",
-          age: "8 years", // Placeholder
-          gender: "Male", // Placeholder
+          age: "-",
+          gender: "-",
         },
         term: { name: termData.name, session: termData.session },
-        teacherRemark: "An outstanding result. Keep up the excellent work.", // Placeholder
+        teacherRemark: "An outstanding result. Keep up the excellent work.",
         scores: processedScores,
       }),
     );
