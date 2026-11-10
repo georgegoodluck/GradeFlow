@@ -3,12 +3,10 @@ import {
   uuid,
   text,
   boolean,
-  integer,
   real,
   timestamp,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 
 export const staffRoleEnum = pgEnum("staff_role", [
   "owner",
@@ -20,8 +18,8 @@ export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   code: text("code").notNull().unique(),
+  motto: text("motto").default("KNOWLEDGE, GODLINESS AND POWER"),
   logoUrl: text("logo_url"),
-  // NEW FIELDS:
   headOfSchoolTitle: text("head_of_school_title").default("Proprietress"),
   headOfSchoolName: text("head_of_school_name").default("Mrs. Hannah"),
   onboardingComplete: boolean("onboarding_complete").notNull().default(false),
@@ -130,5 +128,5 @@ export const scores = pgTable("scores", {
   ca2: real("ca2").notNull().default(0),
   ca3: real("ca3").notNull().default(0),
   exam: real("exam").notNull().default(0),
-  remark: text("remark"), // NEW FIELD
+  remark: text("remark"),
 });
