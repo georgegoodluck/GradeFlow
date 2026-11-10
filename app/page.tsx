@@ -1,4 +1,3 @@
-// app/page.tsx
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -10,16 +9,16 @@ async function goToSchool(formData: FormData) {
   const code = formData.get("code");
   if (typeof code !== "string" || code.trim().length === 0) return;
 
-  const cleanSlug = code.trim().toLowerCase().replace(/\s+/g, "-");
+  const cleanCode = code.trim().toUpperCase();
 
   const [school] = await db
     .select({ code: schools.code })
     .from(schools)
-    .where(eq(schools.code, cleanSlug))
+    .where(eq(schools.code, cleanCode))
     .limit(1);
 
   if (school) {
-    redirect(`/${school.code}/login`);
+    redirect(`/login?schoolCode=${school.code}`);
   } else {
     redirect(`/login?error=not_found`);
   }
@@ -42,7 +41,7 @@ export default function LandingPage() {
         >
           <input
             name="code"
-            placeholder="Enter school code"
+            placeholder="Enter your school code (GDF-XX-XXX)"
             required
             className="w-full rounded-lg border border-white/10 bg-white/10 px-6 py-4 text-white placeholder-gray-400 focus:border-gold focus:outline-none sm:w-96"
           />
