@@ -78,7 +78,6 @@ export async function GET(
     let processedScores: ProcessedScore[] = [];
 
     if (isThirdTerm) {
-      // Fetch all terms in the same academic session
       const sessionTerms = await db
         .select()
         .from(terms)
@@ -111,7 +110,6 @@ export async function GET(
           ),
         );
 
-      // Group by subject and compute cumulative averages
       const subjectMap = new Map<
         string,
         { name: string; scores: typeof allScores }
@@ -162,7 +160,6 @@ export async function GET(
         });
       }
     } else {
-      // Standard single-term processing
       const scoreData = await db
         .select({
           subjectName: subjects.name,
@@ -194,7 +191,7 @@ export async function GET(
           ca1: s.ca1,
           ca2: s.ca2,
           ca3: s.ca3,
-          caTotal: caTotal,
+          caTotal,
           exam: s.exam,
           total: computed.total,
           grade: computed.grade,
@@ -208,10 +205,23 @@ export async function GET(
       });
     }
 
+    // Fetch teacher remark from the scores (if any)
+    const [firstScore] = await db
+      .select({ remark: scores.remark })
+      .from(scores)
+      .where(
+        and(
+          eq(scores.studentId, studentId),
+          eq(scores.termId, termId),
+          eq(scores.schoolId, session.user.schoolId),
+        ),
+      )
+      .limit(1);
+
     const pdfBuffer = await renderToBuffer(
       ReportCardPDF({
         schoolName: school.name,
-        schoolMotto: "KNOWLEDGE, GODLINESS AND POWER",
+        schoolMotto: school.motto || "KNOWLEDGE, GODLINESS AND POWER",
         logoUrl: school.logoUrl,
         headOfSchoolTitle: school.headOfSchoolTitle || "Proprietress",
         headOfSchoolName: school.headOfSchoolName || "Mrs. A. O. Okafor",
@@ -228,7 +238,9 @@ export async function GET(
           name: isThirdTerm ? `${termData.name} (Cumulative)` : termData.name,
           session: termData.session,
         },
-        teacherRemark: "An outstanding result. Keep up the excellent work.",
+        teacherRemark:
+          firstScore?.remark ||
+          "An outstanding result. Keep up the excellent work.",
         scores: processedScores,
       }),
     );
