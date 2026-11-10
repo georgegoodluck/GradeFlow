@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { computeScore } from "@/lib/grading";
 import { submitScores } from "@/app/actions/scores";
 
@@ -25,6 +25,14 @@ interface Props {
   existingScores: Map<string, Score>;
 }
 
+// Centralize the limits so UI and server stay in sync
+const MAX_SCORES: Record<keyof Score, number> = {
+  ca1: 40,
+  ca2: 40,
+  ca3: 40,
+  exam: 60,
+};
+
 export function ScoreEntryForm({
   classId,
   subjectId,
@@ -35,35 +43,71 @@ export function ScoreEntryForm({
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
-  // Initialize state from existing scores
+  const draftKey = `draft_${classId}_${subjectId}_${termId}`;
+
   const [scores, setScores] = useState<Record<string, Score>>(() => {
     const initial: Record<string, Score> = {};
+
+    let draft: Record<string, Score> | null = null;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        try {
+          draft = JSON.parse(saved);
+        } catch {
+          // Ignore malformed draft
+        }
+      }
+    }
+
     for (const student of students) {
-      initial[student.id] = existingScores.get(student.id) || {
-        ca1: 0,
-        ca2: 0,
-        ca3: 0,
-        exam: 0,
-      };
+      if (draft && draft[student.id]) {
+        initial[student.id] = draft[student.id];
+      } else {
+        initial[student.id] = existingScores.get(student.id) || {
+          ca1: 0,
+          ca2: 0,
+          ca3: 0,
+          exam: 0,
+        };
+      }
     }
     return initial;
   });
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(draftKey, JSON.stringify(scores));
+    }
+  }, [scores, draftKey]);
+
   function handleChange(studentId: string, field: keyof Score, value: string) {
-    const numValue = parseFloat(value) || 0;
+    // Handle empty input gracefully (don't force a 0 into the field)
+    if (value === "") {
+      setScores((prev) => ({
+        ...prev,
+        [studentId]: { ...prev[studentId], [field]: 0 },
+      }));
+      return;
+    }
+
+    // Reject non-numeric input early
+    const parsed = parseFloat(value);
+    if (Number.isNaN(parsed)) return;
+
+    // Clamp to [0, max] based on field
+    const max = MAX_SCORES[field];
+    const clamped = Math.min(Math.max(parsed, 0), max);
+
     setScores((prev) => ({
       ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        [field]: numValue,
-      },
+      [studentId]: { ...prev[studentId], [field]: clamped },
     }));
   }
 
   function handleSubmit(formData: FormData) {
     setMessage(null);
 
-    // Append our React state to the FormData
     for (const [studentId, score] of Object.entries(scores)) {
       formData.set(`ca1_${studentId}`, score.ca1.toString());
       formData.set(`ca2_${studentId}`, score.ca2.toString());
@@ -79,6 +123,7 @@ export function ScoreEntryForm({
       const result = await submitScores(formData);
       if (result.success) {
         setMessage("Scores saved successfully!");
+        localStorage.removeItem(draftKey);
       } else {
         setMessage(result.error || "An error occurred.");
       }
@@ -89,11 +134,19 @@ export function ScoreEntryForm({
     <form action={handleSubmit} className="space-y-4">
       {message && (
         <div
-          className={`rounded p-4 ${message.includes("success") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+          className={`rounded p-4 ${
+            message.includes("success")
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700"
+          }`}
         >
           {message}
         </div>
       )}
+
+      <div className="flex justify-end text-xs text-gray-500">
+        Drafts are saved automatically to your browser.
+      </div>
 
       <div className="overflow-x-auto rounded-lg bg-white shadow-soft">
         <table className="w-full text-left text-sm">
@@ -125,9 +178,9 @@ export function ScoreEntryForm({
                       <input
                         type="number"
                         min="0"
-                        max={field === "exam" ? 60 : 40}
+                        max={MAX_SCORES[field]}
                         step="0.01"
-                        value={score[field] || ""}
+                        value={score[field] === 0 ? "" : score[field]}
                         onChange={(e) =>
                           handleChange(student.id, field, e.target.value)
                         }
