@@ -11,6 +11,8 @@ import {
   CalendarDays,
   FileText,
   Settings,
+  Award,
+  PenLine,
 } from "lucide-react";
 
 const adminLinks = [
@@ -25,20 +27,29 @@ const adminLinks = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+const teacherLinks = [
+  { href: "/teacher", label: "My Classes", icon: LayoutDashboard },
+  { href: "/teacher/scores", label: "Enter Scores", icon: PenLine },
+];
+
+const studentLinks = [{ href: "/student", label: "My Results", icon: Award }];
+
+export function SidebarNav() {
   const pathname = usePathname();
+
+  let links = adminLinks;
+  if (pathname.startsWith("/teacher")) links = teacherLinks;
+  if (pathname.startsWith("/student")) links = studentLinks;
 
   return (
     <nav className="mt-8 space-y-1 text-sm flex-1 overflow-y-auto">
-      {adminLinks.map((link) => {
+      {links.map((link) => {
         const isActive = pathname === link.href;
         const Icon = link.icon;
-
         return (
           <Link
             key={link.href}
             href={link.href}
-            onClick={onNavigate}
             className={`flex items-center gap-3 rounded-lg px-3 py-2 transition ${
               isActive
                 ? "bg-white/10 text-gold font-medium"
