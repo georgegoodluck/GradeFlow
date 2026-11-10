@@ -1,13 +1,13 @@
+// db/index.ts
 import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+import { drizzle as drizzleWs } from "drizzle-orm/neon-serverless";
+import { neon, Pool } from "@neondatabase/serverless";
 import * as schema from "./schema";
 
-// Application client: uses restricted role (RLS active)
-// We'll configure the restricted role connection string later via Neon console
+// HTTP driver: fast for reads, does NOT support interactive transactions
 const appSql = neon(process.env.DATABASE_URL!);
 export const db = drizzle(appSql, { schema });
 
-// Auth client: uses owner connection (bypasses RLS)
-// For Phase 1, we temporarily use the same connection; Phase 2 will add a separate owner URL
-const authSql = neon(process.env.DATABASE_URL!);
-export const authDb = drizzle(authSql, { schema });
+// WebSocket driver: supports transactions, used for Auth and score submission
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+export const authDb = drizzleWs(pool, { schema });

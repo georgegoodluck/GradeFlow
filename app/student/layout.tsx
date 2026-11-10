@@ -1,6 +1,4 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
-import { auth } from "@/auth";
+// app/student/layout.tsx
 import { Award } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -32,18 +30,7 @@ export default function StudentLayout({
         </div>
       </aside>
 
-      <main className="flex-1 p-4 pt-20 md:p-8 md:pt-8">
-        <Suspense fallback={<StudentSkeleton />}>{children}</Suspense>
-      </main>
-    </div>
-  );
-}
-
-function StudentSkeleton() {
-  return (
-    <div className="animate-pulse space-y-8">
-      <div className="h-10 w-48 rounded bg-gray-200" />
-      <div className="h-64 rounded-lg bg-gray-200" />
+      <main className="flex-1 p-4 pt-20 md:p-8 md:pt-8">{children}</main>
     </div>
   );
 }

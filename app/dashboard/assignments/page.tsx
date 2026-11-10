@@ -1,31 +1,16 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { eq, and } from "drizzle-orm";
-import { UserPlus, Trash2 } from "lucide-react";
+import { ClipboardList, Trash2, UserPlus } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { staff, classes, subjects, teacherSubjects } from "@/db/schema";
 import { assignTeacher, removeAssignment } from "@/app/actions/assignments";
 
-export default function AssignmentsPage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">Teacher Assignments</h2>
-      <Suspense fallback={<TableSkeleton />}>
-        <AssignmentList />
-      </Suspense>
-    </div>
-  );
-}
+export const dynamic = "force-dynamic";
 
-async function AssignmentList() {
-  await connection();
+export default async function AssignmentsPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-  if (session.user.role !== "owner" && session.user.role !== "admin") {
-    redirect("/dashboard");
-  }
+  if (!session?.user?.schoolId)
+    return <div className="p-8 text-center text-red-500">Unauthorized</div>;
 
   const sid = session.user.schoolId;
 
@@ -51,7 +36,8 @@ async function AssignmentList() {
   ]);
 
   return (
-    <>
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">Teacher Assignments</h2>
       <form
         action={assignTeacher}
         className="grid grid-cols-1 gap-3 rounded-lg bg-white p-6 shadow-soft md:grid-cols-4"
@@ -82,7 +68,7 @@ async function AssignmentList() {
         </select>
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-2 font-medium text-charcoal"
+          className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-2 text-charcoal font-medium"
         >
           <UserPlus className="h-4 w-4" /> Assign
         </button>
@@ -92,20 +78,20 @@ async function AssignmentList() {
         {assignments.map((a) => (
           <li
             key={a.id}
-            className="flex items-center justify-between gap-4 p-4"
+            className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <span className="min-w-0 truncate">
+            <span className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-gray-400" />
               {a.teacherName} teaches <strong>{a.subjectName}</strong> in{" "}
               <strong>{a.className}</strong>
             </span>
-            <form action={removeAssignment} className="shrink-0">
+            <form action={removeAssignment}>
               <input type="hidden" name="id" value={a.id} />
               <button
                 type="submit"
-                className="rounded-md bg-red-50 p-2 text-red-500 transition hover:text-red-700"
-                title="Remove"
+                className="flex items-center gap-2 text-sm text-red-500 transition hover:text-red-600"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" /> Remove
               </button>
             </form>
           </li>
@@ -114,10 +100,6 @@ async function AssignmentList() {
           <li className="p-4 text-gray-500">No assignments yet.</li>
         )}
       </ul>
-    </>
+    </div>
   );
-}
-
-function TableSkeleton() {
-  return <div className="h-64 w-full animate-pulse rounded-lg bg-gray-200" />;
 }

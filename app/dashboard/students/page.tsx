@@ -1,6 +1,3 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { eq } from "drizzle-orm";
 import { UserPlus, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
@@ -8,21 +5,12 @@ import { db } from "@/db";
 import { students, classes } from "@/db/schema";
 import { addStudent, deleteStudent } from "@/app/actions/students";
 
-export default function StudentsPage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">Students</h2>
-      <Suspense fallback={<TableSkeleton />}>
-        <StudentList />
-      </Suspense>
-    </div>
-  );
-}
+export const dynamic = "force-dynamic";
 
-async function StudentList() {
-  await connection();
+export default async function StudentsPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
+  if (!session?.user?.schoolId)
+    return <div className="p-8 text-center text-red-500">Unauthorized</div>;
 
   const allStudents = await db
     .select({
@@ -42,7 +30,8 @@ async function StudentList() {
     .where(eq(classes.schoolId, session.user.schoolId));
 
   return (
-    <>
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">Students</h2>
       <form
         action={addStudent}
         className="grid gap-3 rounded-lg bg-white p-6 shadow-soft"
@@ -74,10 +63,12 @@ async function StudentList() {
           <UserPlus className="h-4 w-4" /> Add Student
         </button>
       </form>
-
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {allStudents.map((s) => (
-          <li key={s.id} className="flex items-center justify-between p-4">
+          <li
+            key={s.id}
+            className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div>
               <p className="font-medium">
                 {s.name} ({s.admissionNo})
@@ -101,10 +92,6 @@ async function StudentList() {
           <li className="p-4 text-gray-500">No students yet.</li>
         )}
       </ul>
-    </>
+    </div>
   );
-}
-
-function TableSkeleton() {
-  return <div className="h-64 w-full animate-pulse rounded-lg bg-gray-200" />;
 }

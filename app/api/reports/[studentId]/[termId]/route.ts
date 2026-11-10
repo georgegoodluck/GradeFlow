@@ -1,3 +1,4 @@
+// app/api/reports/[studentId]/[termId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { eq, and } from "drizzle-orm";
@@ -14,15 +15,16 @@ import {
 import { ReportCardPDF } from "@/components/reports/ReportCardPDF";
 import { computeScore } from "@/lib/grading";
 
+export const runtime = "nodejs"; // Required for @react-pdf/renderer
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ studentId: string; termId: string }> },
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.schoolId) {
+    if (!session?.user?.schoolId)
       return new NextResponse("Unauthorized", { status: 401 });
-    }
 
     const { studentId, termId } = await params;
 
@@ -31,10 +33,7 @@ export async function GET(
       .from(schools)
       .where(eq(schools.id, session.user.schoolId))
       .limit(1);
-
-    if (!school) {
-      return new NextResponse("School not found", { status: 404 });
-    }
+    if (!school) return new NextResponse("School not found", { status: 404 });
 
     const [studentData] = await db
       .select({
@@ -51,10 +50,8 @@ export async function GET(
         ),
       )
       .limit(1);
-
-    if (!studentData) {
+    if (!studentData)
       return new NextResponse("Student not found", { status: 404 });
-    }
 
     const [termData] = await db
       .select()
@@ -63,10 +60,7 @@ export async function GET(
         and(eq(terms.id, termId), eq(terms.schoolId, session.user.schoolId)),
       )
       .limit(1);
-
-    if (!termData) {
-      return new NextResponse("Term not found", { status: 404 });
-    }
+    if (!termData) return new NextResponse("Term not found", { status: 404 });
 
     const scoreData = await db
       .select({
@@ -127,11 +121,10 @@ export async function GET(
       }),
     );
 
-    // renderToBuffer returns a Node Buffer; NextResponse's BodyInit type
-    // doesn't accept Buffer in this TS config, so convert to Uint8Array.
-    const pdfUint8Array = new Uint8Array(pdfBuffer);
+    // Next.js needs Uint8Array or Blob, not a Node Buffer
+    const blob = new Blob([pdfBuffer], { type: "application/pdf" });
 
-    return new NextResponse(pdfUint8Array, {
+    return new NextResponse(blob, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${studentData.name.replace(/\s+/g, "_")}_report.pdf"`,

@@ -1,3 +1,4 @@
+// components/reports/ReportCardPDF.tsx
 import React from "react";
 import {
   Document,
@@ -5,54 +6,12 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   Image,
 } from "@react-pdf/renderer";
 
-// Register the custom fonts (Playfair for headings, Inter for body)
-// Each family is registered with explicit regular + italic variants so that
-// `fontStyle: "italic"` resolves correctly. For a true italic, swap in the
-// actual italic font file URLs.
-Font.register({
-  family: "Playfair",
-  fonts: [
-    {
-      src: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtXK-F2qC0s.ttf",
-      fontWeight: "normal",
-      fontStyle: "normal",
-    },
-    {
-      src: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtXK-F2qC0s.ttf",
-      fontWeight: "normal",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Inter",
-  fonts: [
-    {
-      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff",
-      fontWeight: "normal",
-      fontStyle: "normal",
-    },
-    {
-      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff",
-      fontWeight: "normal",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-// Define styles using Flexbox
+// Define styles using Flexbox (Using standard fonts to prevent loading errors)
 const styles = StyleSheet.create({
-  page: {
-    padding: 30,
-    fontFamily: "Inter",
-    fontSize: 9,
-    color: "#1C1C1E",
-  },
+  page: { padding: 30, fontFamily: "Helvetica", fontSize: 9, color: "#1C1C1E" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -61,27 +20,15 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 15,
   },
-  logo: {
-    width: 60,
-    height: 60,
-    marginRight: 15,
-  },
-  titleContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
+  logo: { width: 60, height: 60, marginRight: 15 },
+  titleContainer: { flex: 1, alignItems: "center" },
   title: {
-    fontFamily: "Playfair",
     fontSize: 28,
     fontWeight: "bold",
     color: "#1C1C1E",
     textTransform: "uppercase",
   },
-  subtitle: {
-    fontSize: 10,
-    color: "#666",
-    marginTop: 2,
-  },
+  subtitle: { fontSize: 10, color: "#666", marginTop: 2 },
   motto: {
     backgroundColor: "#1C1C1E",
     color: "#C6A664",
@@ -89,16 +36,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     textAlign: "center",
     fontSize: 8,
-    letterSpacing: 2,
     marginTop: 5,
   },
   sectionTitle: {
-    fontFamily: "Playfair",
     fontSize: 14,
     fontWeight: "bold",
     textAlign: "center",
     marginVertical: 10,
-    letterSpacing: 1,
   },
   infoRow: {
     flexDirection: "row",
@@ -106,10 +50,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     paddingHorizontal: 10,
   },
-  infoLabel: {
-    fontWeight: "bold",
-    width: 80,
-  },
+  infoLabel: { fontWeight: "bold", width: 80 },
   infoValue: {
     flex: 1,
     borderBottomWidth: 1,
@@ -135,36 +76,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#CCC",
   },
-  cell: {
-    padding: 4,
-    borderRightWidth: 1,
-    borderRightColor: "#CCC",
-  },
-  // Specific column widths
+  cell: { padding: 4, borderRightWidth: 1, borderRightColor: "#CCC" },
   colSubject: { width: "25%" },
   colCA: { width: "8%", textAlign: "center" },
   colExam: { width: "10%", textAlign: "center" },
   colTotal: { width: "10%", textAlign: "center" },
   colGrade: { width: "10%", textAlign: "center" },
   colRemark: { width: "17%", textAlign: "center" },
-  // Layout for sidebars
-  mainLayout: {
-    flexDirection: "row",
-    gap: 15,
-    marginTop: 10,
-  },
-  leftColumn: {
-    flex: 2, // Takes up 2/3 of space
-  },
-  rightColumn: {
-    flex: 1, // Takes up 1/3 of space
-    gap: 10,
-  },
-  sidebarBox: {
-    borderWidth: 1,
-    borderColor: "#1C1C1E",
-    padding: 8,
-  },
+  mainLayout: { flexDirection: "row", gap: 15, marginTop: 10 },
+  leftColumn: { flex: 2 },
+  rightColumn: { flex: 1, gap: 10 },
+  sidebarBox: { borderWidth: 1, borderColor: "#1C1C1E", padding: 8 },
   sidebarHeader: {
     backgroundColor: "#1C1C1E",
     color: "#FFF",
@@ -174,7 +96,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginBottom: 5,
   },
-  // Grading Key Styles
   gradingKey: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -184,10 +105,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CCC",
   },
-  keyItem: {
-    fontSize: 7,
-    fontWeight: "bold",
-  },
+  keyItem: { fontSize: 7, fontWeight: "bold" },
 });
 
 interface Props {
@@ -222,7 +140,6 @@ export function ReportCardPDF({
   term,
   scores,
 }: Props) {
-  // Calculate totals
   const grandTotal = scores.reduce((sum, s) => sum + s.total, 0);
   const average =
     scores.length > 0 ? (grandTotal / scores.length).toFixed(2) : "0.00";
@@ -230,7 +147,6 @@ export function ReportCardPDF({
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        {/* HEADER */}
         <View style={styles.header}>
           {logoUrl ? <Image style={styles.logo} src={logoUrl} /> : null}
           <View style={styles.titleContainer}>
@@ -245,7 +161,6 @@ export function ReportCardPDF({
 
         <Text style={styles.sectionTitle}>PRIMARY SCHOOL REPORT CARD</Text>
 
-        {/* STUDENT INFO */}
         <View
           style={{
             flexDirection: "row",
@@ -293,12 +208,9 @@ export function ReportCardPDF({
           </View>
         </View>
 
-        {/* MAIN CONTENT: SCORES + SIDEBAR */}
         <View style={styles.mainLayout}>
-          {/* LEFT COLUMN: SCORE TABLE */}
           <View style={styles.leftColumn}>
             <View style={styles.table}>
-              {/* Table Header */}
               <View style={styles.tableHeader}>
                 <View style={[styles.cell, styles.colSubject]}>
                   <Text>SUBJECTS</Text>
@@ -332,7 +244,6 @@ export function ReportCardPDF({
                 </View>
               </View>
 
-              {/* Table Rows */}
               {scores.map((s, i) => (
                 <View key={i} style={styles.tableRow}>
                   <View style={[styles.cell, styles.colSubject]}>
@@ -368,7 +279,6 @@ export function ReportCardPDF({
                 </View>
               ))}
 
-              {/* Grand Total Row */}
               <View
                 style={{
                   flexDirection: "row",
@@ -397,9 +307,7 @@ export function ReportCardPDF({
             </View>
           </View>
 
-          {/* RIGHT COLUMN: SIDEBARS */}
           <View style={styles.rightColumn}>
-            {/* Attendance Box */}
             <View style={styles.sidebarBox}>
               <View style={styles.sidebarHeader}>
                 <Text>ATTENDANCE</Text>
@@ -445,7 +353,6 @@ export function ReportCardPDF({
               </View>
             </View>
 
-            {/* Conduct Box */}
             <View style={styles.sidebarBox}>
               <View style={styles.sidebarHeader}>
                 <Text>CONDUCT &amp; DEVELOPMENT</Text>
@@ -473,7 +380,6 @@ export function ReportCardPDF({
               ))}
             </View>
 
-            {/* Teacher Remark Box */}
             <View
               style={[
                 styles.sidebarBox,
@@ -490,14 +396,13 @@ export function ReportCardPDF({
               >
                 TEACHER&apos;S REMARK
               </Text>
-              <Text style={{ fontStyle: "italic", fontSize: 9 }}>
+              <Text style={{ fontSize: 9 }}>
                 An outstanding result. Keep up the excellent work.
               </Text>
             </View>
           </View>
         </View>
 
-        {/* FOOTER: GRADING KEY & SIGNATURES */}
         <View style={styles.gradingKey}>
           <Text
             style={{
@@ -518,7 +423,6 @@ export function ReportCardPDF({
           <Text style={styles.keyItem}>F (0 – 39)</Text>
         </View>
 
-        {/* Signature Lines */}
         <View
           style={{
             flexDirection: "row",

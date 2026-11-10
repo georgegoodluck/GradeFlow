@@ -22,6 +22,7 @@ function isCredentialsInput(
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
@@ -99,6 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.schoolId = (user as { schoolId: string }).schoolId;
         token.schoolCode = (user as { schoolCode: string }).schoolCode;
         token.role = (user as { role: string }).role;
@@ -108,6 +110,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
+        session.user.id = token.id as string;
         session.user.schoolId = token.schoolId as string;
         session.user.schoolCode = token.schoolCode as string;
         session.user.role = token.role as string;

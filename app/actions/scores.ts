@@ -4,7 +4,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { db } from "@/db";
+import { authDb } from "@/db";
 import { scores, teacherSubjects, terms, students, staff } from "@/db/schema";
 
 // Single source of truth for score limits
@@ -33,7 +33,7 @@ export async function submitScores(
   }
 
   // 1. Resolve real staff ID
-  const [staffRecord] = await db
+  const [staffRecord] = await authDb
     .select({ id: staff.id })
     .from(staff)
     .where(
@@ -49,7 +49,7 @@ export async function submitScores(
   }
 
   // 2. Verify assignment
-  const assignment = await db
+  const assignment = await authDb
     .select({ id: teacherSubjects.id })
     .from(teacherSubjects)
     .where(
@@ -70,7 +70,7 @@ export async function submitScores(
   }
 
   // 3. Verify active term (also scope to school!)
-  const [activeTerm] = await db
+  const [activeTerm] = await authDb
     .select({ id: terms.id })
     .from(terms)
     .where(
@@ -127,7 +127,7 @@ export async function submitScores(
   // 5. Defense-in-depth: verify every studentId belongs to this school AND class
   //    (prevents a malicious client from submitting scores for other schools/classes)
   const studentIds = studentsToUpdate.map((s) => s.studentId);
-  const validStudents = await db
+  const validStudents = await authDb
     .select({ id: students.id })
     .from(students)
     .where(
@@ -141,7 +141,7 @@ export async function submitScores(
   const validStudentIds = new Set(validStudents.map((s) => s.id));
 
   // 6. Upsert (in a transaction so partial failures don't leave half-saved data)
-  await db.transaction(async (tx) => {
+  await authDb.transaction(async (tx) => {
     for (const studentData of studentsToUpdate) {
       // Skip any student that failed the ownership check
       if (!validStudentIds.has(studentData.studentId)) continue;

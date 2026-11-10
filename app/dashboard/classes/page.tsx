@@ -1,6 +1,3 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { eq } from "drizzle-orm";
 import { Plus, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
@@ -8,21 +5,12 @@ import { db } from "@/db";
 import { classes } from "@/db/schema";
 import { createClass, deleteClass } from "@/app/actions/admin";
 
-export default function ClassesPage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">Classes</h2>
-      <Suspense fallback={<TableSkeleton />}>
-        <ClassList />
-      </Suspense>
-    </div>
-  );
-}
+export const dynamic = "force-dynamic";
 
-async function ClassList() {
-  await connection(); // Forces dynamic rendering
+export default async function ClassesPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
+  if (!session?.user?.schoolId)
+    return <div className="p-8 text-center text-red-500">Unauthorized</div>;
 
   const allClasses = await db
     .select()
@@ -30,7 +18,8 @@ async function ClassList() {
     .where(eq(classes.schoolId, session.user.schoolId));
 
   return (
-    <>
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">Classes</h2>
       <form action={createClass} className="flex flex-col gap-3 sm:flex-row">
         <input
           name="name"
@@ -45,7 +34,6 @@ async function ClassList() {
           <Plus className="h-4 w-4" /> Add Class
         </button>
       </form>
-
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {allClasses.map((cls) => (
           <li
@@ -68,10 +56,6 @@ async function ClassList() {
           <li className="p-4 text-gray-500">No classes yet.</li>
         )}
       </ul>
-    </>
+    </div>
   );
-}
-
-function TableSkeleton() {
-  return <div className="h-64 w-full animate-pulse rounded-lg bg-gray-200" />;
 }
