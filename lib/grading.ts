@@ -48,3 +48,19 @@ export function calculateGrade(total: number): Grade {
   if (total >= 40) return "E";
   return "F";
 }
+
+export function computeCumulativeAverage(
+  scores: {
+    termId: string;
+    ca1: number;
+    ca2: number;
+    ca3: number;
+    exam: number;
+  }[],
+): number {
+  if (scores.length === 0) return 0;
+
+  const totalScores = scores.map((s) => computeScore(s).total);
+  const sum = totalScores.reduce((a, b) => a + b, 0);
+  return sum / totalScores.length;
+}

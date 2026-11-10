@@ -93,6 +93,7 @@ export async function submitScores(
     ca2: number;
     ca3: number;
     exam: number;
+    remark: string | null;
   }[] = [];
 
   for (const [key, value] of formData.entries()) {
@@ -116,7 +117,13 @@ export async function submitScores(
         MAX_SCORES.exam,
       );
 
-      studentsToUpdate.push({ studentId, ca1, ca2, ca3, exam });
+      const rawRemark = formData.get(`remark_${studentId}`);
+      const remark =
+        typeof rawRemark === "string" && rawRemark.trim().length > 0
+          ? rawRemark.trim()
+          : null;
+
+      studentsToUpdate.push({ studentId, ca1, ca2, ca3, exam, remark });
     }
   }
 
@@ -146,7 +153,7 @@ export async function submitScores(
       // Skip any student that failed the ownership check
       if (!validStudentIds.has(studentData.studentId)) continue;
 
-      const { studentId, ca1, ca2, ca3, exam } = studentData;
+      const { studentId, ca1, ca2, ca3, exam, remark } = studentData;
 
       const existing = await tx
         .select({ id: scores.id })
@@ -164,7 +171,7 @@ export async function submitScores(
       if (existing.length > 0) {
         await tx
           .update(scores)
-          .set({ ca1, ca2, ca3, exam })
+          .set({ ca1, ca2, ca3, exam, remark })
           .where(eq(scores.id, existing[0].id));
       } else {
         await tx.insert(scores).values({
@@ -176,6 +183,7 @@ export async function submitScores(
           ca2,
           ca3,
           exam,
+          remark,
         });
       }
     }

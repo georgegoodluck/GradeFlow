@@ -14,7 +14,7 @@ import {
 import { ReportCardPDF } from "@/components/reports/ReportCardPDF";
 import { computeScore } from "@/lib/grading";
 
-export const runtime = "nodejs"; // Required for @react-pdf/renderer
+export const runtime = "nodejs";
 
 export async function GET(
   req: NextRequest,
@@ -22,13 +22,11 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.schoolId) {
+    if (!session?.user?.schoolId)
       return new NextResponse("Unauthorized", { status: 401 });
-    }
 
     const { studentId, termId } = await params;
 
-    // 1. Fetch School
     const [school] = await db
       .select()
       .from(schools)
@@ -36,7 +34,6 @@ export async function GET(
       .limit(1);
     if (!school) return new NextResponse("School not found", { status: 404 });
 
-    // 2. Fetch Student
     const [studentData] = await db
       .select({
         name: students.name,
@@ -52,11 +49,9 @@ export async function GET(
         ),
       )
       .limit(1);
-    if (!studentData) {
+    if (!studentData)
       return new NextResponse("Student not found", { status: 404 });
-    }
 
-    // 3. Fetch Term
     const [termData] = await db
       .select()
       .from(terms)
@@ -66,7 +61,6 @@ export async function GET(
       .limit(1);
     if (!termData) return new NextResponse("Term not found", { status: 404 });
 
-    // 4. Fetch Scores
     const scoreData = await db
       .select({
         subjectName: subjects.name,
@@ -85,7 +79,6 @@ export async function GET(
         ),
       );
 
-    // 5. Process Scores for PDF
     const processedScores = scoreData.map((s) => {
       const computed = computeScore({
         ca1: s.ca1,
@@ -93,11 +86,13 @@ export async function GET(
         ca3: s.ca3,
         exam: s.exam,
       });
+      const caTotal = s.ca1 + s.ca2 + s.ca3;
       return {
         subject: s.subjectName,
         ca1: s.ca1,
         ca2: s.ca2,
         ca3: s.ca3,
+        caTotal: caTotal,
         exam: s.exam,
         total: computed.total,
         grade: computed.grade,
@@ -110,31 +105,32 @@ export async function GET(
       };
     });
 
-    // 6. Generate PDF Buffer
     const pdfBuffer = await renderToBuffer(
       ReportCardPDF({
         schoolName: school.name,
-        schoolMotto: "KNOWLEDGE, GODLINESS AND POWER", // You can pull this from the DB if you add it
+        schoolMotto: "KNOWLEDGE, GODLINESS AND POWER",
         logoUrl: school.logoUrl,
+        headOfSchoolTitle: school.headOfSchoolTitle || "Proprietress",
+        headOfSchoolName: school.headOfSchoolName || "Mrs. A. O. Okafor",
+        reportCardId: `RC-${studentData.admissionNo}-${termData.session.replace("/", "")}`,
+        issueDate: new Date().toLocaleDateString(),
         student: {
           name: studentData.name,
           admissionNo: studentData.admissionNo,
           className: studentData.className ?? "N/A",
-          age: "8 years", // Placeholder
-          gender: "Male", // Placeholder
+          age: "-",
+          gender: "-",
         },
         term: { name: termData.name, session: termData.session },
+        teacherRemark: "An outstanding result. Keep up the excellent work.",
         scores: processedScores,
       }),
     );
 
-    // 7. FIX: Convert Node Buffer to a strict Uint8Array to satisfy TypeScript's BlobPart type
     const pdfUint8Array = new Uint8Array(pdfBuffer.length);
     pdfUint8Array.set(pdfBuffer);
-
     const blob = new Blob([pdfUint8Array], { type: "application/pdf" });
 
-    // 8. Return Response
     return new NextResponse(blob, {
       headers: {
         "Content-Type": "application/pdf",

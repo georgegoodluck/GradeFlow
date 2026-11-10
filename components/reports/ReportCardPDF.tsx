@@ -1,3 +1,4 @@
+// components/reports/ReportCardPDF.tsx
 import React from "react";
 import {
   Document,
@@ -8,7 +9,6 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
-// Define styles using Flexbox (Using standard fonts to prevent loading errors)
 const styles = StyleSheet.create({
   page: { padding: 30, fontFamily: "Helvetica", fontSize: 9, color: "#1C1C1E" },
   header: {
@@ -19,88 +19,110 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 15,
   },
-  logo: { width: 60, height: 60, marginRight: 15 },
+  logo: { width: 65, height: 65, marginRight: 15 },
   titleContainer: { flex: 1, alignItems: "center" },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "bold",
     color: "#1C1C1E",
     textTransform: "uppercase",
   },
-  subtitle: { fontSize: 10, color: "#666", marginTop: 2 },
+  subtitle: { fontSize: 9, color: "#666", marginTop: 2 },
   motto: {
     backgroundColor: "#1C1C1E",
     color: "#C6A664",
-    paddingVertical: 4,
-    paddingHorizontal: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 15,
     textAlign: "center",
-    fontSize: 8,
-    marginTop: 5,
+    fontSize: 7,
+    marginTop: 4,
+    letterSpacing: 1,
   },
+
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
     textAlign: "center",
-    marginVertical: 10,
+    marginVertical: 8,
+    letterSpacing: 1,
   },
+
+  infoGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  infoCol: { width: "48%" },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 4,
-    paddingHorizontal: 10,
   },
-  infoLabel: { fontWeight: "bold", width: 80 },
+  infoLabel: { fontWeight: "bold", fontSize: 8, color: "#666", width: 85 },
   infoValue: {
     flex: 1,
     borderBottomWidth: 1,
     borderBottomColor: "#CCC",
     borderStyle: "dotted",
-    paddingBottom: 2,
+    paddingBottom: 1,
+    fontSize: 8,
   },
+
   table: {
     width: "100%",
     borderWidth: 1,
     borderColor: "#1C1C1E",
-    marginTop: 10,
+    marginTop: 5,
   },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#1C1C1E",
     color: "#FFF",
     fontWeight: "bold",
-    fontSize: 8,
+    fontSize: 7,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: "#CCC",
   },
-  cell: { padding: 4, borderRightWidth: 1, borderRightColor: "#CCC" },
-  colSubject: { width: "25%" },
-  colCA: { width: "8%", textAlign: "center" },
-  colExam: { width: "10%", textAlign: "center" },
-  colTotal: { width: "10%", textAlign: "center" },
-  colGrade: { width: "10%", textAlign: "center" },
-  colRemark: { width: "17%", textAlign: "center" },
-  mainLayout: { flexDirection: "row", gap: 15, marginTop: 10 },
-  leftColumn: { flex: 2 },
-  rightColumn: { flex: 1, gap: 10 },
-  sidebarBox: { borderWidth: 1, borderColor: "#1C1C1E", padding: 8 },
-  sidebarHeader: {
-    backgroundColor: "#1C1C1E",
-    color: "#FFF",
-    textAlign: "center",
-    fontWeight: "bold",
+  cell: {
+    padding: 5,
+    borderRightWidth: 1,
+    borderRightColor: "#CCC",
     fontSize: 8,
-    paddingVertical: 3,
-    marginBottom: 5,
+    justifyContent: "center",
   },
+
+  // Updated Column Widths to accommodate the new fields
+  colSubject: { width: "22%" },
+  colCA: { width: "7%", textAlign: "center" },
+  colCATotal: { width: "8%", textAlign: "center" },
+  colExam: { width: "8%", textAlign: "center" },
+  colTotal: { width: "8%", textAlign: "center" },
+  colGrade: { width: "8%", textAlign: "center" },
+  colRemark: { width: "18%", textAlign: "center" },
+
+  footerGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+  },
+  remarkBox: { width: "60%", borderWidth: 1, borderColor: "#CCC", padding: 8 },
+  signatureBox: {
+    width: "35%",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1C1C1E",
+    paddingBottom: 4,
+    marginTop: 15,
+  },
+
   gradingKey: {
     flexDirection: "row",
     justifyContent: "space-between",
     backgroundColor: "#F5F5F7",
-    padding: 8,
-    marginTop: 15,
+    padding: 6,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: "#CCC",
   },
@@ -111,6 +133,11 @@ interface Props {
   schoolName: string;
   schoolMotto: string;
   logoUrl: string | null;
+  proprietressName: string;
+  headOfSchoolTitle: string;
+  headOfSchoolName: string;
+  reportCardId: string;
+  issueDate: string;
   student: {
     name: string;
     admissionNo: string;
@@ -119,11 +146,13 @@ interface Props {
     gender: string;
   };
   term: { name: string; session: string };
+  teacherRemark: string;
   scores: {
     subject: string;
     ca1: number;
     ca2: number;
     ca3: number;
+    caTotal: number;
     exam: number;
     total: number;
     grade: string;
@@ -135,8 +164,14 @@ export function ReportCardPDF({
   schoolName,
   schoolMotto,
   logoUrl,
+  proprietressName,
+  headOfSchoolTitle,
+  headOfSchoolName,
+  reportCardId,
+  issueDate,
   student,
   term,
+  teacherRemark,
   scores,
 }: Props) {
   const grandTotal = scores.reduce((sum, s) => sum + s.total, 0);
@@ -146,262 +181,187 @@ export function ReportCardPDF({
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
+        {/* HEADER */}
         <View style={styles.header}>
-          {logoUrl ? <Image style={styles.logo} src={logoUrl} /> : null}
+          {logoUrl ? (
+            <Image style={styles.logo} src={logoUrl} />
+          ) : (
+            <View style={styles.logo} />
+          )}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{schoolName}</Text>
-            <Text style={styles.subtitle}>IBADAN, OYO STATE</Text>
+            <Text style={styles.subtitle}>Official Academic Report Card</Text>
             <View style={styles.motto}>
               <Text>{schoolMotto}</Text>
             </View>
           </View>
-          <View style={{ width: 60 }} />
+          <View style={{ width: 65 }} />
         </View>
 
-        <Text style={styles.sectionTitle}>PRIMARY SCHOOL REPORT CARD</Text>
+        <Text style={styles.sectionTitle}>STUDENT PERFORMANCE REPORT</Text>
 
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 15,
-          }}
-        >
-          <View style={{ width: "45%" }}>
+        {/* STUDENT & ACADEMIC INFO */}
+        <View style={styles.infoGrid}>
+          <View style={styles.infoCol}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>PUPIL&apos;S NAME</Text>
+              <Text style={styles.infoLabel}>FULL NAME</Text>
               <Text style={styles.infoValue}>{student.name}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>STUDENT ID</Text>
+              <Text style={styles.infoValue}>{student.admissionNo}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>CLASS</Text>
               <Text style={styles.infoValue}>{student.className}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>ADMISSION NO.</Text>
-              <Text style={styles.infoValue}>{student.admissionNo}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>TERM</Text>
-              <Text style={styles.infoValue}>{term.name}</Text>
+              <Text style={styles.infoLabel}>GENDER / AGE</Text>
+              <Text style={styles.infoValue}>
+                {student.gender} / {student.age}
+              </Text>
             </View>
           </View>
-          <View style={{ width: "45%" }}>
+          <View style={styles.infoCol}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>SESSION</Text>
-              <Text style={styles.infoValue}>{term.session}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>AGE</Text>
-              <Text style={styles.infoValue}>{student.age}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>GENDER</Text>
-              <Text style={styles.infoValue}>{student.gender}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>DATE</Text>
+              <Text style={styles.infoLabel}>ACADEMIC PERIOD</Text>
               <Text style={styles.infoValue}>
-                {new Date().toLocaleDateString()}
+                {term.name} - {term.session}
               </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>ISSUE DATE</Text>
+              <Text style={styles.infoValue}>{issueDate}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>REPORT CARD ID</Text>
+              <Text style={styles.infoValue}>{reportCardId}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>PROPRIETRESS</Text>
+              <Text style={styles.infoValue}>{proprietressName}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.mainLayout}>
-          <View style={styles.leftColumn}>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <View style={[styles.cell, styles.colSubject]}>
-                  <Text>SUBJECTS</Text>
-                </View>
-                <View style={[styles.cell, styles.colCA]}>
-                  <Text>CA 1</Text>
-                </View>
-                <View style={[styles.cell, styles.colCA]}>
-                  <Text>CA 2</Text>
-                </View>
-                <View style={[styles.cell, styles.colCA]}>
-                  <Text>CA 3</Text>
-                </View>
-                <View style={[styles.cell, styles.colExam]}>
-                  <Text>EXAM</Text>
-                </View>
-                <View style={[styles.cell, styles.colTotal]}>
-                  <Text>TOTAL</Text>
-                </View>
-                <View style={[styles.cell, styles.colGrade]}>
-                  <Text>GRADE</Text>
-                </View>
-                <View
-                  style={[
-                    styles.cell,
-                    styles.colRemark,
-                    { borderRightWidth: 0 },
-                  ]}
-                >
-                  <Text>REMARKS</Text>
-                </View>
-              </View>
-
-              {scores.map((s, i) => (
-                <View key={i} style={styles.tableRow}>
-                  <View style={[styles.cell, styles.colSubject]}>
-                    <Text>{s.subject}</Text>
-                  </View>
-                  <View style={[styles.cell, styles.colCA]}>
-                    <Text>{s.ca1}</Text>
-                  </View>
-                  <View style={[styles.cell, styles.colCA]}>
-                    <Text>{s.ca2}</Text>
-                  </View>
-                  <View style={[styles.cell, styles.colCA]}>
-                    <Text>{s.ca3}</Text>
-                  </View>
-                  <View style={[styles.cell, styles.colExam]}>
-                    <Text>{s.exam}</Text>
-                  </View>
-                  <View style={[styles.cell, styles.colTotal]}>
-                    <Text>{s.total}</Text>
-                  </View>
-                  <View style={[styles.cell, styles.colGrade]}>
-                    <Text>{s.grade}</Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.cell,
-                      styles.colRemark,
-                      { borderRightWidth: 0 },
-                    ]}
-                  >
-                    <Text>{s.remark}</Text>
-                  </View>
-                </View>
-              ))}
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  backgroundColor: "#F5F5F7",
-                  fontWeight: "bold",
-                }}
-              >
-                <View style={[styles.cell, { width: "50%" }]}>
-                  <Text>GRAND TOTAL</Text>
-                </View>
-                <View style={[styles.cell, styles.colTotal]}>
-                  <Text>{grandTotal}</Text>
-                </View>
-                <View style={[styles.cell, styles.colGrade]}>
-                  <Text>AVG</Text>
-                </View>
-                <View
-                  style={[
-                    styles.cell,
-                    { width: "20%", textAlign: "center", borderRightWidth: 0 },
-                  ]}
-                >
-                  <Text>{average}</Text>
-                </View>
-              </View>
+        {/* SCORE TABLE */}
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={[styles.cell, styles.colSubject]}>
+              <Text>SUBJECT</Text>
+            </View>
+            <View style={[styles.cell, styles.colCA]}>
+              <Text>CA 1</Text>
+            </View>
+            <View style={[styles.cell, styles.colCA]}>
+              <Text>CA 2</Text>
+            </View>
+            <View style={[styles.cell, styles.colCA]}>
+              <Text>CA 3</Text>
+            </View>
+            <View style={[styles.cell, styles.colCATotal]}>
+              <Text>CA TOTAL</Text>
+            </View>
+            <View style={[styles.cell, styles.colExam]}>
+              <Text>EXAM</Text>
+            </View>
+            <View style={[styles.cell, styles.colTotal]}>
+              <Text>TOTAL</Text>
+            </View>
+            <View style={[styles.cell, styles.colGrade]}>
+              <Text>GRADE</Text>
+            </View>
+            <View
+              style={[styles.cell, styles.colRemark, { borderRightWidth: 0 }]}
+            >
+              <Text>REMARKS</Text>
             </View>
           </View>
 
-          <View style={styles.rightColumn}>
-            <View style={styles.sidebarBox}>
-              <View style={styles.sidebarHeader}>
-                <Text>ATTENDANCE</Text>
+          {scores.map((s, i) => (
+            <View key={i} style={styles.tableRow}>
+              <View style={[styles.cell, styles.colSubject]}>
+                <Text>{s.subject}</Text>
+              </View>
+              <View style={[styles.cell, styles.colCA]}>
+                <Text>{s.ca1}</Text>
+              </View>
+              <View style={[styles.cell, styles.colCA]}>
+                <Text>{s.ca2}</Text>
+              </View>
+              <View style={[styles.cell, styles.colCA]}>
+                <Text>{s.ca3}</Text>
+              </View>
+              <View style={[styles.cell, styles.colCATotal]}>
+                <Text>{s.caTotal}</Text>
+              </View>
+              <View style={[styles.cell, styles.colExam]}>
+                <Text>{s.exam}</Text>
+              </View>
+              <View style={[styles.cell, styles.colTotal]}>
+                <Text>{s.total}</Text>
+              </View>
+              <View style={[styles.cell, styles.colGrade]}>
+                <Text>{s.grade}</Text>
               </View>
               <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 2,
-                }}
+                style={[styles.cell, styles.colRemark, { borderRightWidth: 0 }]}
               >
-                <Text>No. of Days School Opened</Text>
-                <Text>117</Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 2,
-                }}
-              >
-                <Text>No. of Days Present</Text>
-                <Text>114</Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 2,
-                }}
-              >
-                <Text>No. of Days Absent</Text>
-                <Text>3</Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text>Attendance (%)</Text>
-                <Text>97.4%</Text>
+                <Text>{s.remark}</Text>
               </View>
             </View>
+          ))}
 
-            <View style={styles.sidebarBox}>
-              <View style={styles.sidebarHeader}>
-                <Text>CONDUCT &amp; DEVELOPMENT</Text>
-              </View>
-              {[
-                "Punctuality",
-                "Neatness",
-                "Honesty",
-                "Respect for Others",
-                "Self Control",
-                "Initiative",
-                "Co-operation",
-              ].map((trait) => (
-                <View
-                  key={trait}
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 2,
-                  }}
-                >
-                  <Text>{trait}</Text>
-                  <Text>⭐⭐⭐⭐⭐</Text>
-                </View>
-              ))}
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: "#F5F5F7",
+              fontWeight: "bold",
+            }}
+          >
+            <View style={[styles.cell, { width: "45%" }]}>
+              <Text>GRAND TOTAL</Text>
             </View>
-
+            <View style={[styles.cell, styles.colTotal]}>
+              <Text>{grandTotal}</Text>
+            </View>
+            <View style={[styles.cell, styles.colGrade]}>
+              <Text>AVG</Text>
+            </View>
             <View
               style={[
-                styles.sidebarBox,
-                { backgroundColor: "#FDF6E3", flex: 1 },
+                styles.cell,
+                { width: "30%", textAlign: "center", borderRightWidth: 0 },
               ]}
             >
+              <Text>{average}%</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* FOOTER SECTION */}
+        <View style={styles.footerGrid}>
+          <View style={styles.remarkBox}>
+            <Text style={{ fontWeight: "bold", fontSize: 8, marginBottom: 4 }}>
+              TEACHER&apos;S REMARK
+            </Text>
+            <Text style={{ fontSize: 9 }}>{teacherRemark}</Text>
+          </View>
+          <View style={{ width: "35%" }}>
+            <View style={styles.signatureBox}>
               <Text
-                style={{
-                  fontWeight: "bold",
-                  fontSize: 8,
-                  marginBottom: 4,
-                  color: "#C6A664",
-                }}
+                style={{ fontSize: 7, fontWeight: "bold", textAlign: "center" }}
               >
-                TEACHER&apos;S REMARK
+                {headOfSchoolTitle.toUpperCase()} SIGNATURE
               </Text>
-              <Text style={{ fontSize: 9 }}>
-                An outstanding result. Keep up the excellent work.
+              <Text style={{ fontSize: 7, textAlign: "center", marginTop: 2 }}>
+                {headOfSchoolName}
               </Text>
             </View>
           </View>
         </View>
 
+        {/* GRADING KEY */}
         <View style={styles.gradingKey}>
           <Text
             style={{
@@ -420,51 +380,6 @@ export function ReportCardPDF({
           <Text style={styles.keyItem}>D (45 – 49)</Text>
           <Text style={styles.keyItem}>E (40 – 44)</Text>
           <Text style={styles.keyItem}>F (0 – 39)</Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginTop: 30,
-          }}
-        >
-          <View
-            style={{
-              width: "25%",
-              borderTopWidth: 1,
-              borderTopColor: "#1C1C1E",
-              paddingTop: 4,
-            }}
-          >
-            <Text style={{ fontSize: 7, fontWeight: "bold" }}>
-              CLASS TEACHER&apos;S SIGNATURE
-            </Text>
-          </View>
-          <View
-            style={{
-              width: "25%",
-              borderTopWidth: 1,
-              borderTopColor: "#1C1C1E",
-              paddingTop: 4,
-            }}
-          >
-            <Text style={{ fontSize: 7, fontWeight: "bold" }}>
-              HEAD TEACHER&apos;S SIGNATURE
-            </Text>
-          </View>
-          <View
-            style={{
-              width: "25%",
-              borderTopWidth: 1,
-              borderTopColor: "#1C1C1E",
-              paddingTop: 4,
-            }}
-          >
-            <Text style={{ fontSize: 7, fontWeight: "bold" }}>
-              PARENT / GUARDIAN&apos;S SIGNATURE
-            </Text>
-          </View>
         </View>
       </Page>
     </Document>

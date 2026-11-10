@@ -19,8 +19,11 @@ export const staffRoleEnum = pgEnum("staff_role", [
 export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  code: text("code").notNull().unique(), // NEW
+  code: text("code").notNull().unique(),
   logoUrl: text("logo_url"),
+  // NEW FIELDS:
+  headOfSchoolTitle: text("head_of_school_title").default("Proprietress"),
+  headOfSchoolName: text("head_of_school_name").default("Mrs. Hannah"),
   onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -102,7 +105,7 @@ export const terms = pgTable("terms", {
     .notNull()
     .references(() => schools.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  session: text("session").notNull(), // NEW: e.g. "2024/2025"
+  session: text("session").notNull(),
   isActive: boolean("is_active").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -127,4 +130,5 @@ export const scores = pgTable("scores", {
   ca2: real("ca2").notNull().default(0),
   ca3: real("ca3").notNull().default(0),
   exam: real("exam").notNull().default(0),
+  remark: text("remark"), // NEW FIELD
 });
