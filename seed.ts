@@ -29,7 +29,7 @@ async function seed() {
     .insert(schema.schools)
     .values({
       name: "Hans Academy",
-      slug: "hans-academy",
+      code: "hans-academy",
       onboardingComplete: true,
       logoUrl: null,
     })
@@ -184,7 +184,7 @@ async function seed() {
 
   console.log("✅ Database seeded successfully!");
   console.log("-----------------------------------------");
-  console.log("🏫 School Slug: hans-academy");
+  console.log("🏫 School Code: hans-academy");
   console.log("👑 Owner Login: owner@hans.local | Password123");
   console.log("👨‍🏫 Teacher Login: teacher1@hans.local | Password123");
   console.log("🎓 Student Login: adm001@student.local | Password123");

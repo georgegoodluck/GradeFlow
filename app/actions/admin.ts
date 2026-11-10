@@ -26,7 +26,7 @@ export async function saveSchoolName(formData: FormData): Promise<void> {
   }
 
   const trimmedName = name.trim();
-  // Generate slug: "Han's Academy" -> "hans-academy"
+  // Generate code: "Han's Academy" -> "hans-academy"
   const baseSlug = trimmedName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -36,7 +36,7 @@ export async function saveSchoolName(formData: FormData): Promise<void> {
   const existing = await db
     .select({ id: schools.id })
     .from(schools)
-    .where(eq(schools.slug, baseSlug))
+    .where(eq(schools.code, baseSlug))
     .limit(1);
   const finalSlug =
     existing.length > 0
@@ -45,7 +45,7 @@ export async function saveSchoolName(formData: FormData): Promise<void> {
 
   await db
     .update(schools)
-    .set({ name: trimmedName, slug: finalSlug })
+    .set({ name: trimmedName, code: finalSlug })
     .where(eq(schools.id, session.user.schoolId));
 
   redirect("/onboarding/term");

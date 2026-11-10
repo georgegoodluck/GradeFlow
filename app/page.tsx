@@ -7,19 +7,19 @@ import { OrbWrapper } from "@/components/orb-wrapper";
 
 async function goToSchool(formData: FormData) {
   "use server";
-  const slug = formData.get("slug");
-  if (typeof slug !== "string" || slug.trim().length === 0) return;
+  const code = formData.get("code");
+  if (typeof code !== "string" || code.trim().length === 0) return;
 
-  const cleanSlug = slug.trim().toLowerCase().replace(/\s+/g, "-");
+  const cleanSlug = code.trim().toLowerCase().replace(/\s+/g, "-");
 
   const [school] = await db
-    .select({ slug: schools.slug })
+    .select({ code: schools.code })
     .from(schools)
-    .where(eq(schools.slug, cleanSlug))
+    .where(eq(schools.code, cleanSlug))
     .limit(1);
 
   if (school) {
-    redirect(`/${school.slug}/login`);
+    redirect(`/${school.code}/login`);
   } else {
     redirect(`/login?error=not_found`);
   }
@@ -41,7 +41,7 @@ export default function LandingPage() {
           className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"
         >
           <input
-            name="slug"
+            name="code"
             placeholder="Enter school code"
             required
             className="w-full rounded-lg border border-white/10 bg-white/10 px-6 py-4 text-white placeholder-gray-400 focus:border-gold focus:outline-none sm:w-96"

@@ -5,19 +5,19 @@ import { eq } from "drizzle-orm";
 
 async function findSchool(formData: FormData) {
   "use server";
-  const slug = formData.get("slug");
-  if (typeof slug !== "string" || slug.trim().length === 0) return;
+  const code = formData.get("code");
+  if (typeof code !== "string" || code.trim().length === 0) return;
 
-  const cleanSlug = slug.trim().toLowerCase().replace(/\s+/g, "-");
+  const cleanSlug = code.trim().toLowerCase().replace(/\s+/g, "-");
 
   const [school] = await db
-    .select({ slug: schools.slug })
+    .select({ code: schools.code })
     .from(schools)
-    .where(eq(schools.slug, cleanSlug))
+    .where(eq(schools.code, cleanSlug))
     .limit(1);
 
   if (school) {
-    redirect(`/${school.slug}/login`);
+    redirect(`/${school.code}/login`);
   } else {
     redirect(`/login?error=not_found`);
   }
@@ -44,7 +44,7 @@ export default function GenericLoginPage({
         </div>
 
         <input
-          name="slug"
+          name="code"
           placeholder="School Code (e.g. Hans-academy)"
           required
           className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"

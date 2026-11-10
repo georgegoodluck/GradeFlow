@@ -8,7 +8,7 @@ import { schools, staff, students } from "./db/schema";
 // Type guard for the credentials input
 function isCredentialsInput(
   value: unknown,
-): value is { email: string; password: string; schoolSlug?: string } {
+): value is { email: string; password: string; schoolCode: string } {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -16,8 +16,8 @@ function isCredentialsInput(
     typeof (value as Record<string, unknown>).email === "string" &&
     "password" in value &&
     typeof (value as Record<string, unknown>).password === "string" &&
-    (!("schoolSlug" in value) ||
-      typeof (value as Record<string, unknown>).schoolSlug === "string")
+    "schoolCode" in value &&
+    typeof (value as Record<string, unknown>).schoolCode === "string"
   );
 }
 
@@ -27,20 +27,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        schoolSlug: { label: "School", type: "text" },
+        schoolCode: { label: "School", type: "text" },
       },
       async authorize(credentials: unknown) {
         if (!isCredentialsInput(credentials)) return null;
 
-        const { email, password, schoolSlug } = credentials;
+        const { email, password, schoolCode } = credentials;
 
-        if (!schoolSlug || schoolSlug.trim().length === 0) return null;
+        if (!schoolCode || schoolCode.trim().length === 0) return null;
 
-        // 1. Resolve the school from the slug
+        // 1. Resolve the school from the code
         const [school] = await authDb
           .select()
           .from(schools)
-          .where(eq(schools.slug, schoolSlug.trim()))
+          .where(eq(schools.code, schoolCode.trim()))
           .limit(1);
 
         if (!school) return null;
@@ -64,7 +64,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: staffMember.name,
             role: staffMember.role,
             schoolId: staffMember.schoolId,
-            schoolSlug: school.slug,
+            schoolCode: school.code,
             userType: "staff" as const,
           };
         }
@@ -87,7 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: student.name,
             role: "student" as const,
             schoolId: student.schoolId,
-            schoolSlug: school.slug,
+            schoolCode: school.code,
             userType: "student" as const,
           };
         }
@@ -100,7 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.schoolId = (user as { schoolId: string }).schoolId;
-        token.schoolSlug = (user as { schoolSlug: string }).schoolSlug;
+        token.schoolCode = (user as { schoolCode: string }).schoolCode;
         token.role = (user as { role: string }).role;
         token.userType = (user as { userType: string }).userType;
       }
@@ -109,7 +109,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.schoolId = token.schoolId as string;
-        session.user.schoolSlug = token.schoolSlug as string;
+        session.user.schoolCode = token.schoolCode as string;
         session.user.role = token.role as string;
         session.user.userType = token.userType as string;
       }

@@ -16,12 +16,12 @@ import { generateSchoolCode } from "@/lib/school-code";
 export async function loginAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
   const password = formData.get("password");
-  const schoolSlug = formData.get("schoolSlug");
+  const schoolCode = formData.get("schoolCode");
 
   // Determine where to send the user back on error
   const errorRedirectPath =
-    typeof schoolSlug === "string" && schoolSlug.trim() !== ""
-      ? `/${schoolSlug.trim()}/login?error=invalid`
+    typeof schoolCode === "string" && schoolCode.trim() !== ""
+      ? `/${schoolCode.trim()}/login?error=invalid`
       : `/login?error=invalid`;
 
   if (
@@ -29,8 +29,8 @@ export async function loginAction(formData: FormData): Promise<void> {
     email.trim() === "" ||
     typeof password !== "string" ||
     password.trim() === "" ||
-    typeof schoolSlug !== "string" ||
-    schoolSlug.trim() === ""
+    typeof schoolCode !== "string" ||
+    schoolCode.trim() === ""
   ) {
     redirect(errorRedirectPath);
   }
@@ -39,12 +39,12 @@ export async function loginAction(formData: FormData): Promise<void> {
     await signIn("credentials", {
       email: email.trim(),
       password,
-      schoolSlug: schoolSlug.trim(),
+      schoolCode: schoolCode.trim(),
       redirectTo: "/dashboard",
     });
   } catch (error: unknown) {
     if (error instanceof AuthError) {
-      redirect(`/${schoolSlug.trim()}/login?error=${error.type}`);
+      redirect(`/${schoolCode.trim()}/login?error=${error.type}`);
     }
     throw error;
   }
