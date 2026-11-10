@@ -1,19 +1,200 @@
 "use server";
 
-import { auth } from "@/auth";
-import { db } from "@/db";
-import { staff } from "@/db/schema";
-import { sql } from "drizzle-orm";
+import { hash } from "bcryptjs";
+import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { hash } from "bcryptjs";
 import { randomBytes } from "node:crypto";
+import { auth } from "@/auth";
+import { db } from "@/db";
+import { classes, subjects, staff, schools, terms } from "@/db/schema";
 
-// Helper: extract string from FormData safely
 function getString(formData: FormData, key: string): string | null {
   const value = formData.get(key);
   return typeof value === "string" ? value : null;
 }
+
+// ONBOARDING ACTIONS
+
+export async function saveSchoolName(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0) {
+    redirect("/onboarding/school?error=empty");
+  }
+
+  await db
+    .update(schools)
+    .set({ name: name.trim() })
+    .where(eq(schools.id, session.user.schoolId));
+
+  redirect("/onboarding/term");
+}
+
+export async function saveFirstTerm(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0) {
+    redirect("/onboarding/term?error=empty");
+  }
+
+  const existing = await db
+    .select({ id: terms.id })
+    .from(terms)
+    .where(eq(terms.schoolId, session.user.schoolId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    redirect("/onboarding/classes");
+  }
+
+  await db.insert(terms).values({
+    schoolId: session.user.schoolId,
+    name: name.trim(),
+    isActive: true,
+  });
+
+  redirect("/onboarding/classes");
+}
+
+export async function saveOnboardingClasses(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const raw = getString(formData, "classes");
+  if (!raw || raw.trim().length === 0) {
+    redirect("/onboarding/classes?error=empty");
+  }
+
+  const names = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (names.length === 0) redirect("/onboarding/classes?error=empty");
+
+  const existing = await db
+    .select({ name: classes.name })
+    .from(classes)
+    .where(eq(classes.schoolId, session.user.schoolId));
+
+  const existingLower = new Set(existing.map((c) => c.name.toLowerCase()));
+  const unique = names.filter((n) => !existingLower.has(n.toLowerCase()));
+
+  if (unique.length > 0) {
+    await db.insert(classes).values(
+      unique.map((name) => ({
+        schoolId: session.user.schoolId!,
+        name,
+      })),
+    );
+  }
+
+  await db
+    .update(schools)
+    .set({ onboardingComplete: true })
+    .where(eq(schools.id, session.user.schoolId));
+
+  redirect("/dashboard");
+}
+
+// ==========================================
+// CLASS & SUBJECT CRUD
+// ==========================================
+
+export async function createClass(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0) return;
+
+  const trimmed = name.trim();
+
+  const existing = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(
+      sql`${classes.schoolId} = ${session.user.schoolId} AND lower(${classes.name}) = lower(${trimmed})`,
+    )
+    .limit(1);
+
+  if (existing.length > 0) return;
+
+  await db.insert(classes).values({
+    schoolId: session.user.schoolId,
+    name: trimmed,
+  });
+
+  revalidatePath("/dashboard/classes");
+}
+
+export async function deleteClass(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  await db
+    .delete(classes)
+    .where(
+      sql`${classes.id} = ${id} AND ${classes.schoolId} = ${session.user.schoolId}`,
+    );
+
+  revalidatePath("/dashboard/classes");
+}
+
+export async function createSubject(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0) return;
+
+  const trimmed = name.trim();
+
+  const existing = await db
+    .select({ id: subjects.id })
+    .from(subjects)
+    .where(
+      sql`${subjects.schoolId} = ${session.user.schoolId} AND lower(${subjects.name}) = lower(${trimmed})`,
+    )
+    .limit(1);
+
+  if (existing.length > 0) return;
+
+  await db.insert(subjects).values({
+    schoolId: session.user.schoolId,
+    name: trimmed,
+  });
+
+  revalidatePath("/dashboard/subjects");
+}
+
+export async function deleteSubject(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  await db
+    .delete(subjects)
+    .where(
+      sql`${subjects.id} = ${id} AND ${subjects.schoolId} = ${session.user.schoolId}`,
+    );
+
+  revalidatePath("/dashboard/subjects");
+}
+
+// ==========================================
+// STAFF MANAGEMENT (Auto-generated password)
+// ==========================================
 
 export async function addStaffMember(
   formData: FormData,
@@ -39,7 +220,6 @@ export async function addStaffMember(
     return { success: false, error: "Invalid input." };
   }
 
-  // Check for existing staff
   const existingStaff = await db
     .select({ id: staff.id })
     .from(staff)
@@ -64,6 +244,5 @@ export async function addStaffMember(
 
   revalidatePath("/dashboard/staff");
 
-  // Return the plaintext password to show to the admin ONCE
   return { success: true, generatedPassword };
 }
