@@ -45,7 +45,7 @@ export default function GenericLoginPage({
 
         <input
           name="slug"
-          placeholder="School Code (e.g. royal-academy)"
+          placeholder="School Code (e.g. Hans-academy)"
           required
           className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
         />
