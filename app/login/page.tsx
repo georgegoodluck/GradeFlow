@@ -1,8 +1,8 @@
+// app/login/page.tsx
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { eq } from "drizzle-orm";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { loginAction, findSchoolAction } from "@/app/actions/auth";
@@ -40,8 +40,6 @@ async function LoginForm({
   }>;
 }) {
   await connection();
-  const session = await auth();
-  if (session?.user) redirect("/dashboard");
 
   const params = await searchParams;
   const schoolCode = params.schoolCode;
