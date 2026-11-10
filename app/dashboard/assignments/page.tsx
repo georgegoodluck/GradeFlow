@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { eq, and } from "drizzle-orm";
+import { UserPlus, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { staff, classes, subjects, teacherSubjects } from "@/db/schema";
@@ -53,7 +54,7 @@ async function AssignmentList() {
     <>
       <form
         action={assignTeacher}
-        className="grid grid-cols-1 md:grid-cols-4 gap-3 rounded-lg bg-white p-6 shadow-soft"
+        className="grid grid-cols-1 gap-3 rounded-lg bg-white p-6 shadow-soft md:grid-cols-4"
       >
         <select name="staffId" required className="rounded border p-3">
           <option value="">Select Teacher</option>
@@ -81,23 +82,30 @@ async function AssignmentList() {
         </select>
         <button
           type="submit"
-          className="rounded bg-gold px-6 py-2 text-charcoal font-medium"
+          className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-2 font-medium text-charcoal"
         >
-          Assign
+          <UserPlus className="h-4 w-4" /> Assign
         </button>
       </form>
 
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {assignments.map((a) => (
-          <li key={a.id} className="flex items-center justify-between p-4">
-            <span>
+          <li
+            key={a.id}
+            className="flex items-center justify-between gap-4 p-4"
+          >
+            <span className="min-w-0 truncate">
               {a.teacherName} teaches <strong>{a.subjectName}</strong> in{" "}
               <strong>{a.className}</strong>
             </span>
-            <form action={removeAssignment}>
+            <form action={removeAssignment} className="shrink-0">
               <input type="hidden" name="id" value={a.id} />
-              <button type="submit" className="text-sm text-red-500">
-                Remove
+              <button
+                type="submit"
+                className="rounded-md bg-red-50 p-2 text-red-500 transition hover:text-red-700"
+                title="Remove"
+              >
+                <Trash2 className="h-4 w-4" />
               </button>
             </form>
           </li>
