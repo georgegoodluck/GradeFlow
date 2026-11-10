@@ -13,6 +13,7 @@ export default function LoginPage({
     error?: string;
     schoolCode?: string;
     registered?: string;
+    reset_sent?: string;
   }>;
 }) {
   return (
@@ -35,13 +36,10 @@ async function LoginForm({
     error?: string;
     schoolCode?: string;
     registered?: string;
+    reset_sent?: string;
   }>;
 }) {
   await connection();
-  // REMOVE the session check here.
-  // The proxy will catch logged-in users and redirect them before
-  // this component even renders.
-
   const params = await searchParams;
   const schoolCode = params.schoolCode;
 
