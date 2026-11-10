@@ -1,36 +1,54 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { schools } from "@/db/schema";
 import { auth } from "@/auth";
 import { loginAction } from "@/app/actions/auth";
 
-// Static shell — renders immediately
-export default function LoginPage({
+export default function TenantLoginPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ error?: string; registered?: string }>;
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-charcoal p-6">
-      <Suspense fallback={<LoginSkeleton />}>
-        <LoginForm searchParams={searchParams} />
+      <Suspense
+        fallback={
+          <div className="h-[28rem] w-full max-w-md animate-pulse rounded-2xl bg-white/5 border border-white/10" />
+        }
+      >
+        <TenantLoginForm params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-// Dynamic child — waits for request
-async function LoginForm({
+async function TenantLoginForm({
+  params,
   searchParams,
 }: {
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ error?: string; registered?: string }>;
 }) {
-  await connection(); // Tell Next.js 16: this is request-dependent
+  await connection();
 
   const session = await auth();
   if (session?.user) redirect("/dashboard");
 
-  const params = await searchParams;
+  const { slug } = await params;
+  const query = await searchParams;
+
+  // Fetch school by slug
+  const [school] = await db
+    .select()
+    .from(schools)
+    .where(eq(schools.slug, slug))
+    .limit(1);
+  if (!school) notFound();
 
   return (
     <form
@@ -38,19 +56,29 @@ async function LoginForm({
       className="w-full max-w-md space-y-5 rounded-2xl bg-white/5 p-10 shadow-2xl backdrop-blur-xl border border-white/10"
     >
       <div className="text-center mb-8">
-        <h1 className="text-4xl text-white font-playfair">Sign In</h1>
-        <p className="text-gray-400 mt-2 text-sm">
-          Welcome back to your grading portal
-        </p>
+        {school.logoUrl && (
+          <img
+            src={school.logoUrl}
+            alt="Logo"
+            className="mx-auto h-16 w-16 mb-4 object-contain rounded-md"
+          />
+        )}
+        <h1 className="text-4xl text-white font-playfair">{school.name}</h1>
+        <p className="text-gray-400 mt-2 text-sm">Sign in to your portal</p>
       </div>
 
-      {params.registered && (
+      {/* THIS IS THE CRITICAL LINE */}
+      <input type="hidden" name="schoolSlug" value={school.slug} />
+
+      {query.registered && (
         <p className="text-sm text-green-400">
           Account created. Sign in to continue.
         </p>
       )}
-      {params.error && (
-        <p className="text-sm text-red-400">Invalid credentials.</p>
+      {query.error && (
+        <p className="text-sm text-red-400">
+          Invalid credentials. Please try again.
+        </p>
       )}
 
       <input
@@ -75,11 +103,5 @@ async function LoginForm({
         Sign In
       </button>
     </form>
-  );
-}
-
-function LoginSkeleton() {
-  return (
-    <div className="h-[28rem] w-full max-w-md animate-pulse rounded-2xl bg-white/5 border border-white/10" />
   );
 }
