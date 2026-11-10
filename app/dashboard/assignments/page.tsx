@@ -36,13 +36,15 @@ export default async function AssignmentsPage() {
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       <h2 className="font-playfair text-3xl">Teacher Assignments</h2>
+
+      {/* Assignment Form */}
       <form
         action={assignTeacher}
-        className="grid grid-cols-1 gap-3 rounded-lg bg-white p-6 shadow-soft md:grid-cols-4"
+        className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-soft sm:p-6"
       >
-        <select name="staffId" required className="rounded border p-3">
+        <select name="staffId" required className="w-full rounded border p-3">
           <option value="">Select Teacher</option>
           {allStaff.map((s) => (
             <option key={s.id} value={s.id}>
@@ -50,7 +52,8 @@ export default async function AssignmentsPage() {
             </option>
           ))}
         </select>
-        <select name="subjectId" required className="rounded border p-3">
+
+        <select name="subjectId" required className="w-full rounded border p-3">
           <option value="">Select Subject</option>
           {allSubjects.map((s) => (
             <option key={s.id} value={s.id}>
@@ -58,7 +61,8 @@ export default async function AssignmentsPage() {
             </option>
           ))}
         </select>
-        <select name="classId" required className="rounded border p-3">
+
+        <select name="classId" required className="w-full rounded border p-3">
           <option value="">Select Class</option>
           {allClasses.map((c) => (
             <option key={c.id} value={c.id}>
@@ -66,30 +70,35 @@ export default async function AssignmentsPage() {
             </option>
           ))}
         </select>
+
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-2 text-charcoal font-medium"
+          className="flex w-full items-center justify-center gap-2 rounded bg-gold px-6 py-3 font-medium text-charcoal transition hover:bg-[#d4b573]"
         >
-          <UserPlus className="h-4 w-4" /> Assign
+          <UserPlus className="h-4 w-4" /> Assign Teacher
         </button>
       </form>
 
+      {/* Assignment List */}
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {assignments.map((a) => (
           <li
             key={a.id}
-            className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <span className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-gray-400" />
-              {a.teacherName} teaches <strong>{a.subjectName}</strong> in{" "}
-              <strong>{a.className}</strong>
-            </span>
-            <form action={removeAssignment}>
+            <div className="flex items-start gap-3 min-w-0">
+              <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" />
+              <p className="text-sm leading-relaxed text-charcoal">
+                <span className="font-medium">{a.teacherName}</span> teaches{" "}
+                <span className="font-medium text-gold">{a.subjectName}</span>{" "}
+                in <span className="font-medium">{a.className}</span>
+              </p>
+            </div>
+            <form action={removeAssignment} className="shrink-0">
               <input type="hidden" name="id" value={a.id} />
               <button
                 type="submit"
-                className="flex items-center gap-2 text-sm text-red-500 transition hover:text-red-600"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-red-50 p-2 text-sm text-red-500 transition hover:text-red-600 sm:w-auto"
               >
                 <Trash2 className="h-4 w-4" /> Remove
               </button>
@@ -97,7 +106,7 @@ export default async function AssignmentsPage() {
           </li>
         ))}
         {assignments.length === 0 && (
-          <li className="p-4 text-gray-500">No assignments yet.</li>
+          <li className="p-6 text-center text-gray-500">No assignments yet.</li>
         )}
       </ul>
     </div>
