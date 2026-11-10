@@ -26,14 +26,11 @@ async function AssignmentGrid() {
   await connection(); // REQUIRED
   const session = await auth();
 
-  if (!session?.user?.schoolId) redirect("/login");
-
-  // Check if teacher
-  if (session.user.role !== "teacher" && session.user.role !== "admin") {
-    redirect("/dashboard");
+  if (!session?.user?.schoolId || !session?.user?.id) {
+    redirect("/login");
   }
 
-  // Fetch assignments using the new schema
+  // Fetch assignments. Ensure we match on staffId.
   const myAssignments = await db
     .select({
       id: teacherSubjects.id,
