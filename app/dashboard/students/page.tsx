@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
-import { UserPlus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { students, classes } from "@/db/schema";
-import { addStudent, deleteStudent } from "@/app/actions/students";
+import { deleteStudent } from "@/app/actions/students";
+import { StudentForm } from "./StudentForm";
 
 export const dynamic = "force-dynamic";
 
@@ -32,37 +33,7 @@ export default async function StudentsPage() {
   return (
     <div className="space-y-6">
       <h2 className="font-playfair text-3xl">Students</h2>
-      <form
-        action={addStudent}
-        className="grid gap-3 rounded-lg bg-white p-6 shadow-soft"
-      >
-        <input
-          name="name"
-          placeholder="Student Full Name"
-          required
-          className="rounded border p-3"
-        />
-        <input
-          name="admissionNo"
-          placeholder="Admission No (e.g. ADM001)"
-          required
-          className="rounded border p-3"
-        />
-        <select name="classId" required className="rounded border p-3">
-          <option value="">Select Class</option>
-          {allClasses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-2 text-charcoal"
-        >
-          <UserPlus className="h-4 w-4" /> Add Student
-        </button>
-      </form>
+      <StudentForm classes={allClasses} />
       <ul className="divide-y rounded-lg bg-white shadow-soft">
         {allStudents.map((s) => (
           <li
