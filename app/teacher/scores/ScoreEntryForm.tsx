@@ -1,4 +1,3 @@
-// app/teacher/scores/ScoreEntryForm.tsx
 "use client";
 
 import { useState, useTransition, useEffect } from "react";

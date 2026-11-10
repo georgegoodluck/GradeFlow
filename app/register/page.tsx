@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { auth } from "@/auth";
 import { registerOwner } from "@/app/actions/auth";
+import { SubmitButton } from "@/components/submit-button";
 
 // Static shell — renders immediately
 export default function RegisterPage({
@@ -35,25 +36,24 @@ async function RegisterForm({
   return (
     <form
       action={registerOwner}
-      className="w-full max-w-md space-y-5 rounded-2xl bg-white/5 p-10 shadow-2xl backdrop-blur-xl border border-white/10"
+      className="w-full max-w-md space-y-4 rounded-2xl bg-white p-8 shadow-soft"
     >
-      <div className="text-center mb-8">
-        <h1 className="text-4xl text-white font-playfair">Create Account</h1>
-        <p className="text-gray-400 mt-2 text-sm">
-          Set up your school&apos;s grading portal
-        </p>
-      </div>
+      <h1 className="font-playfair text-3xl text-charcoal text-center mb-6">
+        Register School
+      </h1>
 
       {params.error === "exists" && (
-        <p className="text-sm text-red-400">Email already registered.</p>
+        <p className="text-sm text-red-600 text-center">
+          Email already registered.
+        </p>
       )}
       {params.error === "invalid" && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-600 text-center">
           Please fill every field (password ≥ 6 chars).
         </p>
       )}
       {params.error === "code_failed" && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-600 text-center">
           Could not generate a unique school code. Please try a different school
           name.
         </p>
@@ -61,22 +61,22 @@ async function RegisterForm({
 
       <input
         name="schoolName"
-        placeholder="School name"
+        placeholder="School Name"
         required
-        className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
       <input
         name="name"
-        placeholder="Your full name"
+        placeholder="Your Full Name"
         required
-        className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
       <input
         name="email"
         type="email"
         placeholder="Email"
         required
-        className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
       <input
         name="password"
@@ -84,21 +84,16 @@ async function RegisterForm({
         placeholder="Password"
         required
         minLength={6}
-        className="w-full rounded-lg bg-white/10 border border-white/10 p-4 text-white placeholder-gray-400 focus:outline-none focus:border-gold transition"
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
 
-      <button
-        type="submit"
-        className="w-full rounded-lg bg-gold p-4 font-medium text-charcoal hover:bg-[#d4b573] transition shadow-[0_0_15px_rgba(198,166,100,0.3)]"
-      >
-        Create account
-      </button>
+      <SubmitButton className="w-full">Create Account</SubmitButton>
     </form>
   );
 }
 
 function RegisterSkeleton() {
   return (
-    <div className="h-[34rem] w-full max-w-md animate-pulse rounded-2xl bg-white/5 border border-white/10" />
+    <div className="h-[26rem] w-full max-w-md animate-pulse rounded-2xl bg-white/10" />
   );
 }
