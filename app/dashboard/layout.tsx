@@ -37,6 +37,18 @@ export default function DashboardLayout({
           >
             Staff
           </a>
+          <a
+            href="/dashboard/students"
+            className="block hover:text-gold transition"
+          >
+            Students
+          </a>
+          <a
+            href="/dashboard/assignments"
+            className="block hover:text-gold transition"
+          >
+            Assignments
+          </a>
         </nav>
       </aside>
       <main className="flex-1 p-8">
