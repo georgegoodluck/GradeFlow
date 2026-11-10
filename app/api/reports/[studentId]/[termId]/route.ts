@@ -1,4 +1,3 @@
-// app/api/reports/[studentId]/[termId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { eq, and } from "drizzle-orm";
@@ -23,11 +22,13 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.schoolId)
+    if (!session?.user?.schoolId) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
 
     const { studentId, termId } = await params;
 
+    // 1. Fetch School
     const [school] = await db
       .select()
       .from(schools)
@@ -35,6 +36,7 @@ export async function GET(
       .limit(1);
     if (!school) return new NextResponse("School not found", { status: 404 });
 
+    // 2. Fetch Student
     const [studentData] = await db
       .select({
         name: students.name,
@@ -50,9 +52,11 @@ export async function GET(
         ),
       )
       .limit(1);
-    if (!studentData)
+    if (!studentData) {
       return new NextResponse("Student not found", { status: 404 });
+    }
 
+    // 3. Fetch Term
     const [termData] = await db
       .select()
       .from(terms)
@@ -62,6 +66,7 @@ export async function GET(
       .limit(1);
     if (!termData) return new NextResponse("Term not found", { status: 404 });
 
+    // 4. Fetch Scores
     const scoreData = await db
       .select({
         subjectName: subjects.name,
@@ -80,6 +85,7 @@ export async function GET(
         ),
       );
 
+    // 5. Process Scores for PDF
     const processedScores = scoreData.map((s) => {
       const computed = computeScore({
         ca1: s.ca1,
@@ -104,26 +110,31 @@ export async function GET(
       };
     });
 
+    // 6. Generate PDF Buffer
     const pdfBuffer = await renderToBuffer(
       ReportCardPDF({
         schoolName: school.name,
-        schoolMotto: "KNOWLEDGE, GODLINESS AND POWER",
+        schoolMotto: "KNOWLEDGE, GODLINESS AND POWER", // You can pull this from the DB if you add it
         logoUrl: school.logoUrl,
         student: {
           name: studentData.name,
           admissionNo: studentData.admissionNo,
           className: studentData.className ?? "N/A",
-          age: "8 years",
-          gender: "Male",
+          age: "8 years", // Placeholder
+          gender: "Male", // Placeholder
         },
         term: { name: termData.name, session: termData.session },
         scores: processedScores,
       }),
     );
 
-    // Next.js needs Uint8Array or Blob, not a Node Buffer
-    const blob = new Blob([pdfBuffer], { type: "application/pdf" });
+    // 7. FIX: Convert Node Buffer to a strict Uint8Array to satisfy TypeScript's BlobPart type
+    const pdfUint8Array = new Uint8Array(pdfBuffer.length);
+    pdfUint8Array.set(pdfBuffer);
 
+    const blob = new Blob([pdfUint8Array], { type: "application/pdf" });
+
+    // 8. Return Response
     return new NextResponse(blob, {
       headers: {
         "Content-Type": "application/pdf",
