@@ -245,12 +245,15 @@ export async function createTerm(formData: FormData): Promise<void> {
   if (!session?.user?.schoolId) redirect("/login");
 
   const name = getString(formData, "name");
-  if (!name || name.trim().length === 0) return;
+  const academicSession = getString(formData, "session");
+
+  if (!name || !academicSession) return;
 
   await db.insert(terms).values({
     schoolId: session.user.schoolId,
     name: name.trim(),
-    isActive: false, // Default to inactive
+    session: academicSession,
+    isActive: false,
   });
 
   revalidatePath("/dashboard/terms");
