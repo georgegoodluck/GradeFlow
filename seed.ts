@@ -2,13 +2,13 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { hash } from "bcryptjs";
 import * as schema from "./db/schema";
-import { randomBytes } from "node:crypto";
 import { config } from "dotenv";
-config({ path: ".env.local" });
+import { resolve } from "path";
+
+config({ path: resolve(process.cwd(), ".env.local") });
 
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
-
 async function seed() {
   console.log("🌱 Starting database seed...");
 
