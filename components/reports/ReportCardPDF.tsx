@@ -1,4 +1,3 @@
-// components/reports/ReportCardPDF.tsx
 import React from "react";
 import {
   Document,
@@ -38,7 +37,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     letterSpacing: 1,
   },
-
   sectionTitle: {
     fontSize: 12,
     fontWeight: "bold",
@@ -46,7 +44,6 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     letterSpacing: 1,
   },
-
   infoGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -67,7 +64,6 @@ const styles = StyleSheet.create({
     paddingBottom: 1,
     fontSize: 8,
   },
-
   table: {
     width: "100%",
     borderWidth: 1,
@@ -93,8 +89,6 @@ const styles = StyleSheet.create({
     fontSize: 8,
     justifyContent: "center",
   },
-
-  // Updated Column Widths to accommodate the new fields
   colSubject: { width: "22%" },
   colCA: { width: "7%", textAlign: "center" },
   colCATotal: { width: "8%", textAlign: "center" },
@@ -102,7 +96,6 @@ const styles = StyleSheet.create({
   colTotal: { width: "8%", textAlign: "center" },
   colGrade: { width: "8%", textAlign: "center" },
   colRemark: { width: "18%", textAlign: "center" },
-
   footerGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -116,7 +109,6 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     marginTop: 15,
   },
-
   gradingKey: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -133,7 +125,6 @@ interface Props {
   schoolName: string;
   schoolMotto: string;
   logoUrl: string | null;
-  proprietressName: string;
   headOfSchoolTitle: string;
   headOfSchoolName: string;
   reportCardId: string;
@@ -164,7 +155,6 @@ export function ReportCardPDF({
   schoolName,
   schoolMotto,
   logoUrl,
-  proprietressName,
   headOfSchoolTitle,
   headOfSchoolName,
   reportCardId,
@@ -181,7 +171,6 @@ export function ReportCardPDF({
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        {/* HEADER */}
         <View style={styles.header}>
           {logoUrl ? (
             <Image style={styles.logo} src={logoUrl} />
@@ -200,7 +189,6 @@ export function ReportCardPDF({
 
         <Text style={styles.sectionTitle}>STUDENT PERFORMANCE REPORT</Text>
 
-        {/* STUDENT & ACADEMIC INFO */}
         <View style={styles.infoGrid}>
           <View style={styles.infoCol}>
             <View style={styles.infoRow}>
@@ -238,13 +226,14 @@ export function ReportCardPDF({
               <Text style={styles.infoValue}>{reportCardId}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>PROPRIETRESS</Text>
-              <Text style={styles.infoValue}>{proprietressName}</Text>
+              <Text style={styles.infoLabel}>
+                {headOfSchoolTitle.toUpperCase()}
+              </Text>
+              <Text style={styles.infoValue}>{headOfSchoolName}</Text>
             </View>
           </View>
         </View>
 
-        {/* SCORE TABLE */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <View style={[styles.cell, styles.colSubject]}>
@@ -339,7 +328,6 @@ export function ReportCardPDF({
           </View>
         </View>
 
-        {/* FOOTER SECTION */}
         <View style={styles.footerGrid}>
           <View style={styles.remarkBox}>
             <Text style={{ fontWeight: "bold", fontSize: 8, marginBottom: 4 }}>
@@ -361,7 +349,6 @@ export function ReportCardPDF({
           </View>
         </View>
 
-        {/* GRADING KEY */}
         <View style={styles.gradingKey}>
           <Text
             style={{
