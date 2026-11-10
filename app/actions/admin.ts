@@ -4,7 +4,6 @@ import { hash } from "bcryptjs";
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { classes, subjects, staff, schools, terms } from "@/db/schema";
@@ -108,12 +107,16 @@ export async function saveOnboardingClasses(formData: FormData): Promise<void> {
 // CLASS & SUBJECT CRUD
 // ==========================================
 
-export async function createClass(formData: FormData): Promise<void> {
+export async function createClass(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
   const name = getString(formData, "name");
-  if (!name || name.trim().length === 0) return;
+  if (!name || name.trim().length === 0) {
+    return { success: false, error: "Name is required." };
+  }
 
   const trimmed = name.trim();
   const existing = await db
@@ -123,12 +126,15 @@ export async function createClass(formData: FormData): Promise<void> {
       sql`${classes.schoolId} = ${session.user.schoolId} AND lower(${classes.name}) = lower(${trimmed})`,
     )
     .limit(1);
-  if (existing.length > 0) return;
+  if (existing.length > 0) {
+    return { success: false, error: "Class already exists." };
+  }
 
   await db
     .insert(classes)
     .values({ schoolId: session.user.schoolId, name: trimmed });
   revalidatePath("/dashboard/classes");
+  return { success: true };
 }
 
 export async function deleteClass(formData: FormData): Promise<void> {
@@ -183,12 +189,12 @@ export async function deleteSubject(formData: FormData): Promise<void> {
 }
 
 // ==========================================
-// STAFF MANAGEMENT
+// STAFF MANAGEMENT (Manual password)
 // ==========================================
 
 export async function addStaffMember(
   formData: FormData,
-): Promise<{ success: boolean; generatedPassword?: string; error?: string }> {
+): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
   if (session.user.role !== "owner" && session.user.role !== "admin")
@@ -197,24 +203,41 @@ export async function addStaffMember(
   const email = getString(formData, "email");
   const name = getString(formData, "name");
   const role = getString(formData, "role");
+  const password = getString(formData, "password");
 
-  if (!email || !name || (role !== "teacher" && role !== "admin")) {
-    return { success: false, error: "Missing required fields." };
+  if (
+    !email ||
+    !name ||
+    !password ||
+    (role !== "teacher" && role !== "admin")
+  ) {
+    return { success: false, error: "All fields are required." };
   }
 
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedName = name.trim();
+
+  if (trimmedEmail.length === 0 || trimmedName.length === 0) {
+    return { success: false, error: "Invalid input." };
+  }
+
+  if (password.length < 8) {
+    return {
+      success: false,
+      error: "Password must be at least 8 characters.",
+    };
+  }
 
   const existingStaff = await db
     .select({ id: staff.id })
     .from(staff)
     .where(sql`lower(${staff.email}) = ${trimmedEmail}`)
     .limit(1);
-  if (existingStaff.length > 0)
+  if (existingStaff.length > 0) {
     return { success: false, error: "Email already exists." };
+  }
 
-  const generatedPassword = randomBytes(4).toString("hex");
-  const passwordHash = await hash(generatedPassword, 12);
+  const passwordHash = await hash(password, 12);
 
   await db.insert(staff).values({
     schoolId: session.user.schoolId,
@@ -225,7 +248,7 @@ export async function addStaffMember(
   });
 
   revalidatePath("/dashboard/staff");
-  return { success: true, generatedPassword };
+  return { success: true };
 }
 
 // ==========================================
