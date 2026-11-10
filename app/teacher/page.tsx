@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { eq, and, or } from "drizzle-orm"; // Added 'or'
+import { eq, and } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { teacherSubjects, subjects, classes, staff } from "@/db/schema"; // Added 'staff'
+import { teacherSubjects, subjects, classes } from "@/db/schema";
 
 export default function TeacherDashboard() {
   return (
@@ -23,31 +23,17 @@ export default function TeacherDashboard() {
 }
 
 async function AssignmentGrid() {
-  await connection();
+  await connection(); // REQUIRED
   const session = await auth();
+
   if (!session?.user?.schoolId) redirect("/login");
 
-  // Find the staff record first to ensure we have the exact ID
-  const [staffRecord] = await db
-    .select({ id: staff.id })
-    .from(staff)
-    .where(
-      and(
-        eq(staff.schoolId, session.user.schoolId),
-        eq(staff.email, session.user.email!), // Use email as the ultimate source of truth
-      ),
-    )
-    .limit(1);
-
-  if (!staffRecord) {
-    return (
-      <div className="rounded-lg bg-white p-8 text-center text-gray-500 shadow-soft">
-        Staff record not found. Please contact the administrator.
-      </div>
-    );
+  // Check if teacher
+  if (session.user.role !== "teacher" && session.user.role !== "admin") {
+    redirect("/dashboard");
   }
 
-  // Now fetch assignments using the verified staffRecord.id
+  // Fetch assignments using the new schema
   const myAssignments = await db
     .select({
       id: teacherSubjects.id,
@@ -62,7 +48,7 @@ async function AssignmentGrid() {
     .where(
       and(
         eq(teacherSubjects.schoolId, session.user.schoolId),
-        eq(teacherSubjects.staffId, staffRecord.id), // 👈 Uses the verified UUID
+        eq(teacherSubjects.staffId, session.user.id),
       ),
     );
 
