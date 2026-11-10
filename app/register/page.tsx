@@ -66,6 +66,24 @@ async function RegisterForm({
         className="w-full rounded border p-3 focus:border-gold focus:outline-none"
       />
       <input
+        name="motto"
+        placeholder="School Motto"
+        required
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+      />
+      <input
+        name="headOfSchoolTitle"
+        placeholder="Head of School Title (e.g. Proprietress, Principal)"
+        required
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+      />
+      <input
+        name="headOfSchoolName"
+        placeholder="Head of School Full Name"
+        required
+        className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+      />
+      <input
         name="name"
         placeholder="Your Full Name"
         required
