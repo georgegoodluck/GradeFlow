@@ -14,8 +14,6 @@ import {
 import { ReportCardPDF } from "@/components/reports/ReportCardPDF";
 import { computeScore } from "@/lib/grading";
 
-export const runtime = "nodejs";
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ studentId: string; termId: string }> },
