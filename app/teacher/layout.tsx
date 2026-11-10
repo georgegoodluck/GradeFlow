@@ -1,5 +1,5 @@
-import { LayoutDashboard, PenLine } from "lucide-react";
 import Link from "next/link";
+import { LayoutDashboard } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -24,12 +24,7 @@ export default function TeacherLayout({
           >
             <LayoutDashboard className="h-4 w-4" /> My Classes
           </Link>
-          <Link
-            href="/teacher/scores"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white"
-          >
-            <PenLine className="h-4 w-4" /> Enter Scores
-          </Link>
+          {/* REMOVED "Enter Scores" link */}
         </nav>
         <div className="mt-auto border-t border-white/10 pt-6">
           <SignOutButton />
