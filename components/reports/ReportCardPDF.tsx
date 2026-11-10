@@ -10,13 +10,39 @@ import {
 } from "@react-pdf/renderer";
 
 // Register the custom fonts (Playfair for headings, Inter for body)
+// Each family is registered with explicit regular + italic variants so that
+// `fontStyle: "italic"` resolves correctly. For a true italic, swap in the
+// actual italic font file URLs.
 Font.register({
   family: "Playfair",
-  src: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtXK-F2qC0s.ttf",
+  fonts: [
+    {
+      src: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtXK-F2qC0s.ttf",
+      fontWeight: "normal",
+      fontStyle: "normal",
+    },
+    {
+      src: "https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtXK-F2qC0s.ttf",
+      fontWeight: "normal",
+      fontStyle: "italic",
+    },
+  ],
 });
+
 Font.register({
   family: "Inter",
-  src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff",
+  fonts: [
+    {
+      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff",
+      fontWeight: "normal",
+      fontStyle: "normal",
+    },
+    {
+      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff",
+      fontWeight: "normal",
+      fontStyle: "italic",
+    },
+  ],
 });
 
 // Define styles using Flexbox
@@ -206,7 +232,7 @@ export function ReportCardPDF({
       <Page size="A4" orientation="landscape" style={styles.page}>
         {/* HEADER */}
         <View style={styles.header}>
-          {logoUrl && <Image style={styles.logo} src={logoUrl} />}
+          {logoUrl ? <Image style={styles.logo} src={logoUrl} /> : null}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{schoolName}</Text>
             <Text style={styles.subtitle}>IBADAN, OYO STATE</Text>
@@ -214,7 +240,7 @@ export function ReportCardPDF({
               <Text>{schoolMotto}</Text>
             </View>
           </View>
-          <View style={{ width: 60 }} /> {/* Spacer to balance logo */}
+          <View style={{ width: 60 }} />
         </View>
 
         <Text style={styles.sectionTitle}>PRIMARY SCHOOL REPORT CARD</Text>
@@ -229,7 +255,7 @@ export function ReportCardPDF({
         >
           <View style={{ width: "45%" }}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>PUPIL'S NAME</Text>
+              <Text style={styles.infoLabel}>PUPIL&apos;S NAME</Text>
               <Text style={styles.infoValue}>{student.name}</Text>
             </View>
             <View style={styles.infoRow}>
@@ -422,7 +448,7 @@ export function ReportCardPDF({
             {/* Conduct Box */}
             <View style={styles.sidebarBox}>
               <View style={styles.sidebarHeader}>
-                <Text>CONDUCT & DEVELOPMENT</Text>
+                <Text>CONDUCT &amp; DEVELOPMENT</Text>
               </View>
               {[
                 "Punctuality",
@@ -462,7 +488,7 @@ export function ReportCardPDF({
                   color: "#C6A664",
                 }}
               >
-                TEACHER'S REMARK
+                TEACHER&apos;S REMARK
               </Text>
               <Text style={{ fontStyle: "italic", fontSize: 9 }}>
                 An outstanding result. Keep up the excellent work.
@@ -509,7 +535,7 @@ export function ReportCardPDF({
             }}
           >
             <Text style={{ fontSize: 7, fontWeight: "bold" }}>
-              CLASS TEACHER'S SIGNATURE
+              CLASS TEACHER&apos;S SIGNATURE
             </Text>
           </View>
           <View
@@ -521,7 +547,7 @@ export function ReportCardPDF({
             }}
           >
             <Text style={{ fontSize: 7, fontWeight: "bold" }}>
-              HEAD TEACHER'S SIGNATURE
+              HEAD TEACHER&apos;S SIGNATURE
             </Text>
           </View>
           <View
@@ -533,7 +559,7 @@ export function ReportCardPDF({
             }}
           >
             <Text style={{ fontSize: 7, fontWeight: "bold" }}>
-              PARENT / GUARDIAN'S SIGNATURE
+              PARENT / GUARDIAN&apos;S SIGNATURE
             </Text>
           </View>
         </View>
