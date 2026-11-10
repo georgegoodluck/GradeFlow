@@ -1,4 +1,17 @@
-import { GoldOrb } from "@/components/gold-orb";
+"use client";
+
+import dynamic from "next/dynamic";
+
+// Lazy load the 3D orb so it doesn't block the initial page load
+const GoldOrb = dynamic(
+  () => import("@/components/gold-orb").then((mod) => mod.GoldOrb),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[400px] w-[400px] animate-pulse rounded-full bg-charcoal/50" />
+    ),
+  },
+);
 
 export default function HomePage() {
   return (
