@@ -194,7 +194,7 @@ export async function deleteSubject(formData: FormData): Promise<void> {
 
 export async function addStaffMember(
   formData: FormData,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; generatedPassword?: string; error?: string }> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
   if (session.user.role !== "owner" && session.user.role !== "admin")
@@ -203,41 +203,25 @@ export async function addStaffMember(
   const email = getString(formData, "email");
   const name = getString(formData, "name");
   const role = getString(formData, "role");
-  const password = getString(formData, "password");
 
-  if (
-    !email ||
-    !name ||
-    !password ||
-    (role !== "teacher" && role !== "admin")
-  ) {
-    return { success: false, error: "All fields are required." };
+  if (!email || !name || (role !== "teacher" && role !== "admin")) {
+    return { success: false, error: "Missing required fields." };
   }
 
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedName = name.trim();
-
-  if (trimmedEmail.length === 0 || trimmedName.length === 0) {
-    return { success: false, error: "Invalid input." };
-  }
-
-  if (password.length < 8) {
-    return {
-      success: false,
-      error: "Password must be at least 8 characters.",
-    };
-  }
 
   const existingStaff = await db
     .select({ id: staff.id })
     .from(staff)
     .where(sql`lower(${staff.email}) = ${trimmedEmail}`)
     .limit(1);
-  if (existingStaff.length > 0) {
+  if (existingStaff.length > 0)
     return { success: false, error: "Email already exists." };
-  }
 
-  const passwordHash = await hash(password, 12);
+  // This is what AddStaffForm expects
+  const generatedPassword = randomBytes(4).toString("hex");
+  const passwordHash = await hash(generatedPassword, 12);
 
   await db.insert(staff).values({
     schoolId: session.user.schoolId,
@@ -248,7 +232,7 @@ export async function addStaffMember(
   });
 
   revalidatePath("/dashboard/staff");
-  return { success: true };
+  return { success: true, generatedPassword };
 }
 
 // ==========================================
