@@ -1,6 +1,8 @@
+// app/teacher/scores/ScoreEntryForm.tsx
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import { Save, Loader2 } from "lucide-react";
 import { computeScore } from "@/lib/grading";
 import { submitScores } from "@/app/actions/scores";
 
@@ -25,7 +27,6 @@ interface Props {
   existingScores: Map<string, Score>;
 }
 
-// Centralize the limits so UI and server stay in sync
 const MAX_SCORES: Record<keyof Score, number> = {
   ca1: 40,
   ca2: 40,
@@ -41,7 +42,9 @@ export function ScoreEntryForm({
   existingScores,
 }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(
+    null,
+  );
 
   const draftKey = `draft_${classId}_${subjectId}_${termId}`;
 
@@ -82,7 +85,6 @@ export function ScoreEntryForm({
   }, [scores, draftKey]);
 
   function handleChange(studentId: string, field: keyof Score, value: string) {
-    // Handle empty input gracefully (don't force a 0 into the field)
     if (value === "") {
       setScores((prev) => ({
         ...prev,
@@ -91,11 +93,9 @@ export function ScoreEntryForm({
       return;
     }
 
-    // Reject non-numeric input early
     const parsed = parseFloat(value);
     if (Number.isNaN(parsed)) return;
 
-    // Clamp to [0, max] based on field
     const max = MAX_SCORES[field];
     const clamped = Math.min(Math.max(parsed, 0), max);
 
@@ -122,25 +122,25 @@ export function ScoreEntryForm({
     startTransition(async () => {
       const result = await submitScores(formData);
       if (result.success) {
-        setMessage("Scores saved successfully!");
+        setMessage({ text: "Scores saved successfully!", ok: true });
         localStorage.removeItem(draftKey);
       } else {
-        setMessage(result.error || "An error occurred.");
+        setMessage({ text: result.error || "An error occurred.", ok: false });
       }
     });
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4 pb-24 md:pb-0">
       {message && (
         <div
-          className={`rounded p-4 ${
-            message.includes("success")
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
+          className={`rounded p-4 text-sm font-medium ${
+            message.ok
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
           }`}
         >
-          {message}
+          {message.text}
         </div>
       )}
 
@@ -148,9 +148,69 @@ export function ScoreEntryForm({
         Drafts are saved automatically to your browser.
       </div>
 
-      <div className="overflow-x-auto rounded-lg bg-white shadow-soft">
+      {/* MOBILE VIEW: CARDS */}
+      <div className="space-y-4 md:hidden">
+        {students.map((student) => {
+          const score = scores[student.id];
+          const computed = computeScore(score);
+          return (
+            <div
+              key={student.id}
+              className="rounded-lg border border-gray-100 bg-white p-4 shadow-soft"
+            >
+              <div className="mb-3 flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-charcoal">{student.name}</p>
+                  <p className="text-xs text-gray-500">{student.admissionNo}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-playfair text-2xl font-semibold text-charcoal leading-none">
+                    {computed.total}
+                  </p>
+                  <span
+                    className={`mt-1 inline-block rounded px-2 py-0.5 text-xs font-bold ${
+                      computed.grade === "A"
+                        ? "bg-green-100 text-green-700"
+                        : computed.grade === "F"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {computed.grade}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {(["ca1", "ca2", "ca3", "exam"] as const).map((field) => (
+                  <div key={field}>
+                    <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-gray-500">
+                      {field.replace("ca", "CA ")} (Max {MAX_SCORES[field]})
+                    </label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      max={MAX_SCORES[field]}
+                      step="0.01"
+                      value={score[field] === 0 ? "" : score[field]}
+                      onChange={(e) =>
+                        handleChange(student.id, field, e.target.value)
+                      }
+                      className="w-full rounded border border-gray-300 p-2.5 text-center text-lg focus:border-gold focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* DESKTOP VIEW: TABLE */}
+      <div className="hidden overflow-x-auto rounded-lg bg-white shadow-soft md:block">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="border-b bg-gray-50">
             <tr>
               <th className="p-4 font-medium text-gray-500">Student</th>
               <th className="p-4 font-medium text-gray-500">CA1 (40)</th>
@@ -161,14 +221,14 @@ export function ScoreEntryForm({
               <th className="p-4 font-medium text-gray-500">Grade</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-gray-100">
             {students.map((student) => {
               const score = scores[student.id];
               const computed = computeScore(score);
               return (
-                <tr key={student.id} className="hover:bg-gray-50">
+                <tr key={student.id} className="hover:bg-gray-50/70">
                   <td className="p-4">
-                    <p className="font-medium">{student.name}</p>
+                    <p className="font-medium text-charcoal">{student.name}</p>
                     <p className="text-xs text-gray-500">
                       {student.admissionNo}
                     </p>
@@ -177,6 +237,7 @@ export function ScoreEntryForm({
                     <td key={field} className="p-4">
                       <input
                         type="number"
+                        inputMode="decimal"
                         min="0"
                         max={MAX_SCORES[field]}
                         step="0.01"
@@ -184,11 +245,13 @@ export function ScoreEntryForm({
                         onChange={(e) =>
                           handleChange(student.id, field, e.target.value)
                         }
-                        className="w-20 rounded border p-2 text-center focus:border-gold focus:outline-none"
+                        className="w-20 rounded border border-gray-300 p-2 text-center focus:border-gold focus:outline-none"
                       />
                     </td>
                   ))}
-                  <td className="p-4 font-semibold">{computed.total}</td>
+                  <td className="p-4 font-semibold text-charcoal">
+                    {computed.total}
+                  </td>
                   <td className="p-4">
                     <span
                       className={`rounded px-2 py-1 text-xs font-bold ${
@@ -209,13 +272,22 @@ export function ScoreEntryForm({
         </table>
       </div>
 
-      <div className="flex justify-end">
+      {/* FLOATING ACTION BAR ON MOBILE / INLINE ON DESKTOP */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-200 bg-white/95 p-4 backdrop-blur shadow-[0_-4px_12px_rgba(0,0,0,0.06)] md:static md:border-none md:bg-transparent md:p-0 md:shadow-none md:flex md:justify-end">
         <button
           type="submit"
           disabled={isPending}
-          className="rounded bg-gold px-8 py-3 font-medium text-charcoal hover:bg-[#d4b573] disabled:opacity-50 transition"
+          className="flex w-full items-center justify-center gap-2 rounded bg-gold px-8 py-3.5 font-medium text-charcoal transition hover:bg-[#d4b573] disabled:opacity-50 md:w-auto md:py-3"
         >
-          {isPending ? "Saving..." : "Save Scores"}
+          {isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" /> Save Scores
+            </>
+          )}
         </button>
       </div>
     </form>
