@@ -34,7 +34,7 @@ const teacherLinks = [
 
 const studentLinks = [{ href: "/student", label: "My Results", icon: Award }];
 
-export function SidebarNav() {
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   let links = adminLinks;
@@ -50,6 +50,7 @@ export function SidebarNav() {
           <Link
             key={link.href}
             href={link.href}
+            onClick={onNavigate}
             className={`flex items-center gap-3 rounded-lg px-3 py-2 transition ${
               isActive
                 ? "bg-white/10 text-gold font-medium"
