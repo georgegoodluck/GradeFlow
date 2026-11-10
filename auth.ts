@@ -5,7 +5,6 @@ import { and, eq } from "drizzle-orm";
 import { authDb } from "./db";
 import { schools, staff, students } from "./db/schema";
 
-// Type guard for the credentials input
 function isCredentialsInput(
   value: unknown,
 ): value is { email: string; password: string; schoolCode: string } {
@@ -32,12 +31,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials: unknown) {
         if (!isCredentialsInput(credentials)) return null;
-
         const { email, password, schoolCode } = credentials;
 
         if (!schoolCode || schoolCode.trim().length === 0) return null;
 
-        // 1. Resolve the school from the code
         const [school] = await authDb
           .select()
           .from(schools)
@@ -46,7 +43,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!school) return null;
 
-        // 2. Check staff scoped to this school
         const [staffMember] = await authDb
           .select()
           .from(staff)
@@ -70,7 +66,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           };
         }
 
-        // 3. Check students scoped to this school
         const [student] = await authDb
           .select()
           .from(students)
@@ -118,8 +113,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
-    // Safe redirect: only allow same-origin URLs, otherwise fall back to baseUrl.
-    // Role-based routing is handled in the dashboard layout guard, not here.
     async redirect({ url, baseUrl }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
