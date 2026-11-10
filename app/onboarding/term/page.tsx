@@ -1,9 +1,20 @@
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { saveFirstTerm } from "@/app/actions/admin";
 import { SubmitButton } from "@/components/submit-button";
 
 export default function TermStep() {
+  return (
+    <Suspense fallback={<TermSkeleton />}>
+      <TermForm />
+    </Suspense>
+  );
+}
+
+async function TermForm() {
+  await connection(); // Tells Next.js 16 this part is dynamic
+
   const currentYear = new Date().getFullYear();
-  // Generate sessions from current year up to +5 years (e.g., 2026/2027)
   const sessions = Array.from({ length: 6 }).map((_, i) => {
     const year = currentYear + i;
     return `${year}/${year + 1}`;
@@ -47,5 +58,17 @@ export default function TermStep() {
 
       <SubmitButton>Continue</SubmitButton>
     </form>
+  );
+}
+
+function TermSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 w-1/3 rounded bg-gray-200" />
+      <div className="h-4 w-2/3 rounded bg-gray-200" />
+      <div className="h-12 w-full rounded bg-gray-200" />
+      <div className="h-12 w-full rounded bg-gray-200" />
+      <div className="h-12 w-1/3 rounded bg-gray-200" />
+    </div>
   );
 }
