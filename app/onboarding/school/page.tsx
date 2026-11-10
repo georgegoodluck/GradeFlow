@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { saveSchoolName } from "../../actions/admin";
+import { saveSchoolName } from "@/app/actions/admin"
 
 export default async function SchoolStep() {
   const session = await auth();
