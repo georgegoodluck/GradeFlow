@@ -37,24 +37,17 @@ export async function saveFirstTerm(formData: FormData): Promise<void> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
-  const name = getString(formData, "name");
-  if (!name || name.trim().length === 0) {
+  const termName = getString(formData, "name");
+  const academicSession = getString(formData, "session");
+
+  if (!termName || !academicSession) {
     redirect("/onboarding/term?error=empty");
-  }
-
-  const existing = await db
-    .select({ id: terms.id })
-    .from(terms)
-    .where(eq(terms.schoolId, session.user.schoolId))
-    .limit(1);
-
-  if (existing.length > 0) {
-    redirect("/onboarding/classes");
   }
 
   await db.insert(terms).values({
     schoolId: session.user.schoolId,
-    name: name.trim(),
+    name: termName.trim(),
+    session: academicSession,
     isActive: true,
   });
 
