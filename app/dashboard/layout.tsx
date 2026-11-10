@@ -49,6 +49,12 @@ export default function DashboardLayout({
           >
             Assignments
           </a>
+          <a
+            href="/dashboard/terms"
+            className="block hover:text-gold transition"
+          >
+            Terms
+          </a>
         </nav>
       </aside>
       <main className="flex-1 p-8">
