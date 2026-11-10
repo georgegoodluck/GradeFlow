@@ -15,6 +15,13 @@
       "when": 1794270493331,
       "tag": "0001_spicy_dakota_north",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794276560915,
+      "tag": "0002_kind_photon",
+      "breakpoints": true
     }
   ]
 }
