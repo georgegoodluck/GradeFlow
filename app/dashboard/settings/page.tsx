@@ -1,31 +1,16 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { eq } from "drizzle-orm";
+import { UploadCloud, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { updateSchoolLogo, removeSchoolLogo } from "@/app/actions/school";
-import { SubmitButton } from "@/components/SubmitButton";
-import Image from "next/image";
 
-export default function SettingsPage() {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-playfair text-3xl">School Settings</h2>
-      <Suspense
-        fallback={<div className="h-64 bg-gray-200 animate-pulse rounded-lg" />}
-      >
-        <SettingsForm />
-      </Suspense>
-    </div>
-  );
-}
+export const dynamic = "force-dynamic";
 
-async function SettingsForm() {
-  await connection();
+export default async function SettingsPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
+  if (!session?.user?.schoolId)
+    return <div className="p-8 text-center text-red-500">Unauthorized</div>;
 
   const [school] = await db
     .select()
@@ -34,44 +19,75 @@ async function SettingsForm() {
     .limit(1);
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-soft space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-2">School Logo</h3>
-        <div className="flex items-center gap-6">
-          <div className="h-24 w-24 rounded-lg border flex items-center justify-center bg-gray-50 overflow-hidden relative group">
-            {school?.logoUrl ? (
-              <>
-                <img
-                  src={school.logoUrl}
-                  alt="School Logo"
-                  className="h-full w-full object-contain"
+    <div className="space-y-6">
+      <h2 className="font-playfair text-3xl">School Settings</h2>
+      <div className="rounded-lg bg-white p-6 shadow-soft space-y-8">
+        {/* Logo Section */}
+        <div>
+          <h3 className="text-lg font-medium mb-4">School Logo</h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8">
+            {/* Current Logo Display */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-32 w-32 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden relative group">
+                {school?.logoUrl ? (
+                  <>
+                    <img
+                      src={school.logoUrl}
+                      alt="School Logo"
+                      className="h-full w-full object-contain p-2"
+                    />
+                    <form
+                      action={removeSchoolLogo}
+                      className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center"
+                    >
+                      <button
+                        type="submit"
+                        className="flex items-center gap-1 text-white text-xs font-medium hover:underline"
+                      >
+                        <Trash2 className="h-3 w-3" /> Remove
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="text-gray-400 flex flex-col items-center">
+                    <UploadCloud className="h-8 w-8 mb-1" />
+                    <span className="text-xs">No Logo</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Upload Form */}
+            <form action={updateSchoolLogo} className="flex-1 space-y-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Upload New Logo
+              </label>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <input
+                  type="file"
+                  name="logo"
+                  accept="image/*"
+                  required
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2.5 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-gold file:text-charcoal
+                    hover:file:bg-[#d4b573]
+                    cursor-pointer"
                 />
-                <form
-                  action={removeSchoolLogo}
-                  className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center"
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto rounded-md bg-charcoal px-6 py-2.5 text-sm font-medium text-white hover:bg-charcoal/90 transition"
                 >
-                  <button
-                    type="submit"
-                    className="text-white text-xs font-medium hover:underline"
-                  >
-                    Remove
-                  </button>
-                </form>
-              </>
-            ) : (
-              <span className="text-gray-400 text-xs">No Logo</span>
-            )}
+                  Upload
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">
+                PNG, JPG or WEBP (max 2MB).
+              </p>
+            </form>
           </div>
-          <form action={updateSchoolLogo} className="space-y-3">
-            <input
-              type="file"
-              name="logo"
-              accept="image/*"
-              required
-              className="text-sm"
-            />
-            <SubmitButton>Upload Logo</SubmitButton>
-          </form>
         </div>
       </div>
     </div>
