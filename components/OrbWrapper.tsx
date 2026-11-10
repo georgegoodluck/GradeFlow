@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 // Lazy load the 3D orb so it doesn't block the initial page load.
 // This is only allowed because we are in a Client Component.
 const GoldOrb = dynamic(
-  () => import("@/components/gold-orb").then((mod) => mod.GoldOrb),
+  () => import("@/components/GoldOrb").then((mod) => mod.GoldOrb),
   {
     ssr: false,
     loading: () => (

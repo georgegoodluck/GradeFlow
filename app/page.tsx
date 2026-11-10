@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
-import { OrbWrapper } from "@/components/orb-wrapper";
+import { OrbWrapper } from "@/components/OrbWrapper";
 import Link from "next/link";
 
 async function goToSchool(formData: FormData) {

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { auth } from "@/auth";
 import { registerOwner } from "@/app/actions/auth";
-import { SubmitButton } from "@/components/submit-button";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // Static shell — renders immediately
 export default function RegisterPage({

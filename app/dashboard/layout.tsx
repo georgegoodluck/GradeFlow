@@ -6,8 +6,8 @@ import { LogOut } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
-import { SidebarNav } from "@/components/sidebar-nav";
-import { MobileNav } from "@/components/mobile-nav";
+import { SidebarNav } from "@/components/SidebarNav";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function DashboardLayout({
   children,

@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { updateSchoolLogo, removeSchoolLogo } from "@/app/actions/school";
-import { SubmitButton } from "@/components/submit-button";
+import { SubmitButton } from "@/components/SubmitButton";
 import Image from "next/image";
 
 export default function SettingsPage() {

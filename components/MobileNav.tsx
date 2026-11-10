@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
-import { SidebarNav } from "./sidebar-nav";
+import { SidebarNav } from "./SidebarNav";
 
 export function MobileNav({ title = "GradeFlow" }: { title?: string }) {
   const [isOpen, setIsOpen] = useState(false);

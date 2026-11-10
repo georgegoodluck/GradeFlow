@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { saveFirstTerm } from "@/app/actions/admin";
-import { SubmitButton } from "@/components/submit-button";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default function TermStep() {
   return (

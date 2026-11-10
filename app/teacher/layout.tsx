@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { LayoutDashboard, PenLine, LogOut } from "lucide-react";
 import { auth } from "@/auth";
 import Link from "next/link";
-import { MobileNav } from "@/components/mobile-nav";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function TeacherLayout({
   children,
