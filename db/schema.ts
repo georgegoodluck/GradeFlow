@@ -19,7 +19,7 @@ export const staffRoleEnum = pgEnum("staff_role", [
 export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique(), // <-- NEW
+  code: text("code").notNull().unique(), // NEW
   logoUrl: text("logo_url"),
   onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
