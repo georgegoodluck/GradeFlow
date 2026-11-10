@@ -9,6 +9,7 @@ config({ path: resolve(process.cwd(), ".env.local") });
 
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
+
 async function seed() {
   console.log("🌱 Starting database seed...");
 
@@ -25,11 +26,13 @@ async function seed() {
 
   // 2. Create School
   console.log("🏫 Creating school...");
+  const schoolCode = "GDF-HA-100"; // Use a fixed code for testing
+
   const [school] = await db
     .insert(schema.schools)
     .values({
       name: "Hans Academy",
-      code: "hans-academy",
+      code: schoolCode,
       onboardingComplete: true,
       logoUrl: null,
     })
@@ -184,7 +187,7 @@ async function seed() {
 
   console.log("✅ Database seeded successfully!");
   console.log("-----------------------------------------");
-  console.log("🏫 School Code: hans-academy");
+  console.log(`🏫 School Code: ${schoolCode}`);
   console.log("👑 Owner Login: owner@hans.local | Password123");
   console.log("👨‍🏫 Teacher Login: teacher1@hans.local | Password123");
   console.log("🎓 Student Login: adm001@student.local | Password123");
