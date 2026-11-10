@@ -1,4 +1,3 @@
-// app/api/reports/[studentId]/[termId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { eq, and } from "drizzle-orm";
