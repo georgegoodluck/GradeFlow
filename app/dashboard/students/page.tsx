@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { eq } from "drizzle-orm";
+import { UserPlus, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { students, classes } from "@/db/schema";
@@ -68,9 +69,9 @@ async function StudentList() {
         </select>
         <button
           type="submit"
-          className="rounded bg-gold px-6 py-2 text-charcoal"
+          className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-2 text-charcoal"
         >
-          Add Student
+          <UserPlus className="h-4 w-4" /> Add Student
         </button>
       </form>
 
@@ -87,12 +88,18 @@ async function StudentList() {
             </div>
             <form action={deleteStudent}>
               <input type="hidden" name="id" value={s.id} />
-              <button type="submit" className="text-sm text-red-500">
-                Delete
+              <button
+                type="submit"
+                className="flex items-center gap-2 text-sm text-red-500 transition hover:text-red-600"
+              >
+                <Trash2 className="h-4 w-4" /> Delete
               </button>
             </form>
           </li>
         ))}
+        {allStudents.length === 0 && (
+          <li className="p-4 text-gray-500">No students yet.</li>
+        )}
       </ul>
     </>
   );
