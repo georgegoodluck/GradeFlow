@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { LayoutDashboard, PenLine } from "lucide-react";
 import { auth } from "@/auth";
@@ -54,14 +53,7 @@ export default function TeacherLayout({
 
 async function TeacherGuard({ children }: { children: React.ReactNode }) {
   await connection();
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if (
-    session.user.userType !== "staff" ||
-    (session.user.role !== "teacher" && session.user.role !== "admin")
-  ) {
-    redirect("/dashboard");
-  }
+  await auth();
   return <>{children}</>;
 }
 

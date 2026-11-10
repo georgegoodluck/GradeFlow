@@ -1,10 +1,6 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
-import { db } from "@/db";
-import { schools } from "@/db/schema";
 import { SidebarNav } from "@/components/SidebarNav";
 import { MobileNav } from "@/components/MobileNav";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -45,20 +41,7 @@ export default function DashboardLayout({
 
 async function DashboardGuard({ children }: { children: React.ReactNode }) {
   await connection();
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-
-  if (session.user.userType === "student") redirect("/student");
-  if (session.user.role === "teacher") redirect("/teacher");
-
-  const [school] = await db
-    .select({ onboardingComplete: schools.onboardingComplete })
-    .from(schools)
-    .where(eq(schools.id, session.user.schoolId))
-    .limit(1);
-
-  if (!school?.onboardingComplete) redirect("/onboarding/school");
-
+  await auth();
   return <>{children}</>;
 }
 
