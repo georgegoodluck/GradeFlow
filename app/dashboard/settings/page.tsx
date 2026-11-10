@@ -3,7 +3,11 @@ import { UploadCloud, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
-import { updateSchoolLogo, removeSchoolLogo } from "@/app/actions/school";
+import {
+  updateSchoolLogo,
+  removeSchoolLogo,
+  updateSchoolDetails,
+} from "@/app/actions/school";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +26,71 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       <h2 className="font-playfair text-3xl">School Settings</h2>
       <div className="rounded-lg bg-white p-6 shadow-soft space-y-8">
+        {/* School Details Section */}
+        <div>
+          <h3 className="text-lg font-medium mb-4">School Details</h3>
+          <form action={updateSchoolDetails} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="headOfSchoolTitle"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Head of School Title
+                </label>
+                <input
+                  id="headOfSchoolTitle"
+                  name="headOfSchoolTitle"
+                  defaultValue={school?.headOfSchoolTitle || ""}
+                  placeholder="e.g. Proprietress, Principal"
+                  required
+                  className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="headOfSchoolName"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Head of School Full Name
+                </label>
+                <input
+                  id="headOfSchoolName"
+                  name="headOfSchoolName"
+                  defaultValue={school?.headOfSchoolName || ""}
+                  placeholder="e.g. Mrs. A. O. Okafor"
+                  required
+                  className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="motto"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                School Motto
+              </label>
+              <input
+                id="motto"
+                name="motto"
+                defaultValue={school?.motto || ""}
+                placeholder="e.g. Knowledge, Godliness and Power"
+                required
+                className="w-full rounded border p-3 focus:border-gold focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-md bg-charcoal px-6 py-2.5 text-sm font-medium text-white hover:bg-charcoal/90 transition"
+            >
+              Save Details
+            </button>
+          </form>
+        </div>
+
+        <hr className="border-gray-200" />
+
         {/* Logo Section */}
         <div>
           <h3 className="text-lg font-medium mb-4">School Logo</h3>
