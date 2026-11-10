@@ -1,39 +1,66 @@
-import { hash } from "bcryptjs";
-import { db } from "@/db";
-import { staff, schools } from "@/db/schema";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { registerOwner } from "@/app/actions/auth";
 
-async function register(formData: FormData) {
-  "use server";
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const name = formData.get("name") as string;
-  const schoolName = formData.get("schoolName") as string;
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
 
-  // Check duplicate email
-  const existing = await db
-    .select()
-    .from(staff)
-    .where(eq(staff.email, email))
-    .limit(1);
-  if (existing.length > 0) {
-    redirect("/register?error=exists");
-  }
+  const params = await searchParams;
 
-  const passwordHash = await hash(password, 12);
-  const [school] = await db
-    .insert(schools)
-    .values({ name: schoolName })
-    .returning();
-
-  await db.insert(staff).values({
-    schoolId: school.id,
-    email,
-    passwordHash,
-    name,
-    role: "owner",
-  });
-
-  redirect("/login");
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-charcoal p-6">
+      <form
+        action={registerOwner}
+        className="w-full max-w-md space-y-4 rounded-lg bg-white p-8 shadow-soft"
+      >
+        <h1 className="font-playfair text-3xl text-charcoal">Create Account</h1>
+        {params.error === "exists" && (
+          <p className="text-sm text-red-600">Email already registered.</p>
+        )}
+        {params.error === "invalid" && (
+          <p className="text-sm text-red-600">
+            Please fill every field (password ≥ 6 chars).
+          </p>
+        )}
+        <input
+          name="schoolName"
+          placeholder="School name"
+          required
+          className="w-full rounded border p-3"
+        />
+        <input
+          name="name"
+          placeholder="Your full name"
+          required
+          className="w-full rounded border p-3"
+        />
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          required
+          className="w-full rounded border p-3"
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          required
+          minLength={6}
+          className="w-full rounded border p-3"
+        />
+        <button
+          type="submit"
+          className="w-full rounded bg-gold p-3 font-medium text-charcoal"
+        >
+          Create account
+        </button>
+      </form>
+    </div>
+  );
 }
