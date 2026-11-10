@@ -13,46 +13,49 @@ function getString(formData: FormData, key: string): string | null {
   return typeof value === "string" ? value : null;
 }
 
-export async function addStudent(formData: FormData): Promise<void> {
+export async function addStudent(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
   const name = getString(formData, "name");
-  const admissionNo = getString(formData, "admissionNo");
   const classId = getString(formData, "classId");
+  if (!name || !classId)
+    return { success: false, error: "Name and class are required." };
 
-  if (!name || !admissionNo || !classId) return;
-
-  const trimmedName = name.trim();
-  const trimmedAdmission = admissionNo.trim();
-
-  // 1. Check for duplicate admission number in this school
-  const existing = await db
-    .select({ id: students.id })
+  // AUTO-GENERATE ADMISSION NUMBER
+  const lastStudent = await db
+    .select({ admissionNo: students.admissionNo })
     .from(students)
-    .where(
-      sql`${students.schoolId} = ${session.user.schoolId} AND lower(${students.admissionNo}) = lower(${trimmedAdmission})`,
-    )
+    .where(eq(students.schoolId, session.user.schoolId))
+    .orderBy(desc(students.admissionNo))
     .limit(1);
 
-  if (existing.length > 0) return; // Silently fail or handle UI error
+  let nextAdmissionNo = "ADM001";
+  if (lastStudent.length > 0) {
+    const lastNo = lastStudent[0].admissionNo;
+    const match = lastNo.match(/\d+$/);
+    if (match) {
+      const nextNum = parseInt(match[0], 10) + 1;
+      nextAdmissionNo = `ADM${nextNum.toString().padStart(3, "0")}`;
+    }
+  }
 
-  // 2. Generate credentials
-  const email = `${trimmedAdmission.toLowerCase()}@student.local`;
-  const defaultPassword = "Password123"; // In production, prompt the admin to set this
-  const passwordHash = await hash(defaultPassword, 12);
+  const email = `${nextAdmissionNo.toLowerCase()}@student.local`;
+  const passwordHash = await hash("Password123", 12);
 
-  // 3. Insert
   await db.insert(students).values({
     schoolId: session.user.schoolId,
     classId,
-    name: trimmedName,
-    admissionNo: trimmedAdmission,
+    name: name.trim(),
+    admissionNo: nextAdmissionNo,
     email,
     passwordHash,
   });
 
   revalidatePath("/dashboard/students");
+  return { success: true };
 }
 
 export async function deleteStudent(formData: FormData): Promise<void> {
