@@ -1,38 +1,31 @@
-import { signIn } from "@/auth";
-import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
-
-async function authenticate(formData: FormData) {
-  "use server";
-  try {
-    await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      redirect(`/login?error=${error.type}`);
-    }
-    throw error;
-  }
-}
+import { auth } from "@/auth";
+import { loginAction } from "@/app/actions/auth";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; registered?: string }>;
 }) {
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
+
   const params = await searchParams;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-charcoal">
+    <div className="flex min-h-screen items-center justify-center bg-charcoal p-6">
       <form
-        action={authenticate}
+        action={loginAction}
         className="w-full max-w-md space-y-4 rounded-lg bg-white p-8 shadow-soft"
       >
-        <h1 className="font-playfair text-3xl text-gold">Sign In</h1>
+        <h1 className="font-playfair text-3xl text-charcoal">Sign In</h1>
+        {params.registered && (
+          <p className="text-sm text-green-700">
+            Account created. Sign in to continue.
+          </p>
+        )}
         {params.error && (
-          <p className="text-red-500 text-sm">Invalid credentials</p>
+          <p className="text-sm text-red-600">Invalid credentials.</p>
         )}
         <input
           name="email"
@@ -50,7 +43,7 @@ export default async function LoginPage({
         />
         <button
           type="submit"
-          className="w-full rounded bg-gold p-3 font-inter text-charcoal"
+          className="w-full rounded bg-gold p-3 font-medium text-charcoal"
         >
           Sign In
         </button>

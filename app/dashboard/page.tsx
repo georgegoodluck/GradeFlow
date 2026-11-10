@@ -1,8 +1,8 @@
+import { redirect } from "next/navigation";
+import { eq, count } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { classes, subjects, students, staff } from "@/db/schema";
-import { eq, count } from "drizzle-orm";
-import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h2 className="font-playfair text-3xl">Dashboard</h2>
+      <div>
+        <h2 className="font-playfair text-3xl text-charcoal">Dashboard</h2>
+        <p className="text-sm text-gray-500">
+          Signed in as {session.user.email}
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.label} className="rounded-lg bg-white p-6 shadow-soft">
