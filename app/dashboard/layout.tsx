@@ -2,12 +2,12 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { eq } from "drizzle-orm";
-import { LogOut } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { SidebarNav } from "@/components/SidebarNav";
 import { MobileNav } from "@/components/MobileNav";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export default function DashboardLayout({
   children,
@@ -29,14 +29,7 @@ export default function DashboardLayout({
           <SidebarNav />
         </div>
         <div className="mt-auto border-t border-white/10 pt-6">
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="flex items-center gap-2 text-sm text-gray-400 transition hover:text-white"
-            >
-              <LogOut className="h-4 w-4" /> Sign Out
-            </button>
-          </form>
+          <SignOutButton />
         </div>
       </aside>
 
