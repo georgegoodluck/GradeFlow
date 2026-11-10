@@ -1,3 +1,4 @@
+// app/dashboard/layout.tsx
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -55,7 +56,12 @@ export default function DashboardLayout({
           >
             Terms
           </a>
-          <a href="/dashboard/settings">Settings</a>
+          <a
+            href="/dashboard/settings"
+            className="block hover:text-gold transition"
+          >
+            Settings
+          </a>
         </nav>
       </aside>
       <main className="flex-1 p-8">
@@ -67,24 +73,16 @@ export default function DashboardLayout({
   );
 }
 
-// This component does the dynamic work
 async function DashboardGuard({ children }: { children: React.ReactNode }) {
-  await connection(); // Tells Next 16 this is dynamic
-
+  await connection();
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
-  // Students get routed to their own portal (Phase 5)
-  if (session.user.userType === "student") {
-    redirect("/student");
-  }
+  // Role-based redirection
+  if (session.user.userType === "student") redirect("/student");
+  if (session.user.role === "teacher") redirect("/teacher");
 
-  // Teachers get routed to the teacher portal
-  if (session.user.role === "teacher") {
-    redirect("/teacher");
-  }
-
-  // Only owners and admins reach here
+  // Owner/Admin continues to dashboard
   const [school] = await db
     .select({ onboardingComplete: schools.onboardingComplete })
     .from(schools)
