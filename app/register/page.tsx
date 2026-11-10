@@ -40,7 +40,7 @@ async function RegisterForm({
       <div className="text-center mb-8">
         <h1 className="text-4xl text-white font-playfair">Create Account</h1>
         <p className="text-gray-400 mt-2 text-sm">
-          Set up your school's grading portal
+          Set up your school&apos;s grading portal
         </p>
       </div>
 
@@ -50,6 +50,12 @@ async function RegisterForm({
       {params.error === "invalid" && (
         <p className="text-sm text-red-400">
           Please fill every field (password ≥ 6 chars).
+        </p>
+      )}
+      {params.error === "code_failed" && (
+        <p className="text-sm text-red-400">
+          Could not generate a unique school code. Please try a different school
+          name.
         </p>
       )}
 
