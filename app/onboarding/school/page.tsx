@@ -3,24 +3,7 @@ import { db } from "@/db";
 import { schools } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-
-async function saveSchool(formData: FormData) {
-  "use server";
-  const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
-
-  const name = formData.get("name");
-  if (typeof name !== "string" || name.trim().length === 0) {
-    redirect("/onboarding/school?error=empty");
-  }
-
-  await db
-    .update(schools)
-    .set({ name: name.trim() })
-    .where(eq(schools.id, session.user.schoolId));
-
-  redirect("/onboarding/term");
-}
+import { saveSchoolName } from "../../actions/admin";
 
 export default async function SchoolStep() {
   const session = await auth();
@@ -35,7 +18,7 @@ export default async function SchoolStep() {
   if (school?.onboardingComplete) redirect("/dashboard");
 
   return (
-    <form action={saveSchool} className="space-y-4">
+    <form action={saveSchoolName} className="space-y-4">
       <h2 className="font-playfair text-2xl">School Name</h2>
       <input
         name="name"
