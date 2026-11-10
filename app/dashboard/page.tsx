@@ -1,23 +1,22 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { eq, count } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { classes, subjects, students, staff } from "@/db/schema";
 
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<StatsSkeleton />}>
-      <StatsGrid />
-    </Suspense>
-  );
-}
+export const dynamic = "force-dynamic";
 
-async function StatsGrid() {
-  await connection();
+export default async function DashboardPage() {
   const session = await auth();
-  if (!session?.user?.schoolId) redirect("/login");
+
+  // If this fires, the proxy failed or the JWT is corrupted.
+  if (!session?.user?.schoolId) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        Unauthorized (Session missing). Please try logging out and logging back
+        in.
+      </div>
+    );
+  }
 
   const sid = session.user.schoolId;
 
@@ -59,19 +58,6 @@ async function StatsGrid() {
             <p className="text-sm text-gray-500">{stat.label}</p>
             <p className="text-3xl font-semibold text-charcoal">{stat.value}</p>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StatsSkeleton() {
-  return (
-    <div className="space-y-8 animate-pulse">
-      <div className="h-10 w-48 bg-gray-200 rounded" />
-      <div className="grid grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-32 bg-gray-200 rounded-lg" />
         ))}
       </div>
     </div>
