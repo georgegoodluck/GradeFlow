@@ -34,7 +34,7 @@ async function SchoolForm() {
       <input
         name="name"
         defaultValue={school?.name ?? ""}
-        placeholder="e.g. Royal Academy"
+        placeholder="e.g. Han's Academy"
         required
         className="w-full rounded border p-3"
       />
