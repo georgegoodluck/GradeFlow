@@ -1,10 +1,12 @@
+// app/teacher/layout.tsx
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { LayoutDashboard, PenLine, LogOut } from "lucide-react";
+import { LayoutDashboard, PenLine } from "lucide-react";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { MobileNav } from "@/components/MobileNav";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export default function TeacherLayout({
   children,
@@ -37,14 +39,7 @@ export default function TeacherLayout({
           </Link>
         </nav>
         <div className="mt-auto border-t border-white/10 pt-6">
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="flex w-full items-center gap-3 text-sm text-gray-400 transition hover:text-white"
-            >
-              <LogOut className="h-4 w-4" /> Sign Out
-            </button>
-          </form>
+          <SignOutButton />
         </div>
       </aside>
 
