@@ -23,18 +23,39 @@ export default async function TermsPage() {
     return acc;
   }, {} as Record<string, typeof allTerms>);
 
+  // Generate the next 6 academic sessions automatically
+  const currentYear = new Date().getFullYear();
+  const sessions = Array.from({ length: 6 }).map((_, i) => {
+    const year = currentYear + i;
+    return `${year}/${year + 1}`;
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <h2 className="font-playfair text-3xl">Academic Terms</h2>
 
       <div className="rounded-lg bg-white p-6 shadow-soft">
         <h3 className="text-lg font-medium mb-2">Start New Academic Session</h3>
         <p className="text-sm text-gray-600 mb-4">
-          This will automatically create First, Second, and Third Term for the selected year.
+          Select a session below. The system will automatically create First, Second, and Third Term for you.
         </p>
         <form action={startNewSession} className="flex flex-col sm:flex-row gap-3">
-          <input name="session" placeholder="Session (e.g. 2026/2027)" required className="rounded border p-3 flex-1" />
-          <button type="submit" className="flex items-center justify-center gap-2 rounded bg-gold px-6 py-3 text-charcoal font-medium">
+          <select
+            name="session"
+            required
+            className="w-full cursor-pointer rounded border p-3 flex-1 bg-white focus:border-gold focus:outline-none"
+          >
+            <option value="">Select Academic Session</option>
+            {sessions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded bg-gold px-6 py-3 text-charcoal font-medium transition hover:bg-[#d4b573] sm:w-auto"
+          >
             <Plus className="h-4 w-4" /> Create Session
           </button>
         </form>
@@ -60,7 +81,12 @@ export default async function TermsPage() {
                   ) : (
                     <form action={setActiveTerm}>
                       <input type="hidden" name="id" value={term.id} />
-                      <button type="submit" className="text-sm text-gold hover:underline">Set as Active</button>
+                      <button
+                        type="submit"
+                        className="cursor-pointer text-sm font-medium text-gold hover:underline"
+                      >
+                        Set as Active
+                      </button>
                     </form>
                   )}
                 </li>

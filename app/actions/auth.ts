@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { authDb } from "@/db";
-import { schools, staff } from "@/db/schema";
+import { schools, staff, terms } from "@/db/schema";
 
 export async function loginAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
@@ -52,18 +52,11 @@ export async function registerOwner(formData: FormData): Promise<void> {
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedSchool = schoolName.trim();
 
-  if (
-    trimmedEmail.length === 0 ||
-    trimmedSchool.length === 0 ||
-    password.length < 6
-  )
+  if (trimmedEmail.length === 0 || trimmedSchool.length === 0 || password.length < 6) {
     redirect("/register?error=invalid");
+  }
 
-  const existing = await authDb
-    .select({ id: staff.id })
-    .from(staff)
-    .where(eq(staff.email, trimmedEmail))
-    .limit(1);
+  const existing = await authDb.select({ id: staff.id }).from(staff).where(eq(staff.email, trimmedEmail)).limit(1);
   if (existing.length > 0) redirect("/register?error=exists");
 
   const passwordHash = await hash(password, 12);
@@ -75,6 +68,7 @@ export async function registerOwner(formData: FormData): Promise<void> {
       motto: motto.trim(),
       headOfSchoolTitle: headOfSchoolTitle.trim(),
       headOfSchoolName: headOfSchoolName.trim(),
+      onboardingComplete: true, // Skip onboarding completely
     })
     .returning({ id: schools.id });
 
@@ -82,10 +76,20 @@ export async function registerOwner(formData: FormData): Promise<void> {
     schoolId: school.id,
     email: trimmedEmail,
     passwordHash,
-    plainPassword: password, // Store for owner visibility
+    plainPassword: password,
     name: trimmedEmail.split("@")[0],
     role: "owner",
   });
+
+  // AUTOMATICALLY CREATE THE FIRST TERM FOR THE CURRENT SESSION
+  const currentYear = new Date().getFullYear();
+  const currentSession = `${currentYear}/${currentYear + 1}`;
+
+  await authDb.insert(terms).values([
+    { schoolId: school.id, name: "First Term", session: currentSession, isActive: true },
+    { schoolId: school.id, name: "Second Term", session: currentSession, isActive: false },
+    { schoolId: school.id, name: "Third Term", session: currentSession, isActive: false },
+  ]);
 
   redirect(`/login?registered=1`);
 }
