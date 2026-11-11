@@ -13,8 +13,6 @@ interface Props {
   term: { name: string; session: string };
   headRemark: string;
   scores: { subject: string; ca1: number; ca2: number; ca3: number; caTotal: number; exam: number; total: number; grade: string; remark: string; position?: number }[];
-  isCumulative?: boolean;
-  cumulativeAverage?: string;
 }
 
 const styles = StyleSheet.create({
@@ -57,11 +55,10 @@ const styles = StyleSheet.create({
 });
 
 export function ReportCardPDF({
-  schoolName, schoolMotto, logoUrl, headOfSchoolTitle, headOfSchoolName, reportCardId, issueDate, student, term, headRemark, scores, isCumulative = false, cumulativeAverage,
+  schoolName, schoolMotto, logoUrl, headOfSchoolTitle, headOfSchoolName, reportCardId, issueDate, student, term, headRemark, scores,
 }: Props) {
   const grandTotal = scores.reduce((sum, s) => sum + s.total, 0);
-  const calculatedAverage = scores.length > 0 ? (grandTotal / scores.length).toFixed(2) : "0.00";
-  const displayAverage = isCumulative && cumulativeAverage ? cumulativeAverage : calculatedAverage;
+  const displayAverage = (grandTotal / scores.length).toFixed(2);
 
   return (
     <Document>
@@ -118,7 +115,7 @@ export function ReportCardPDF({
 
         <View style={styles.summarySection}>
           <View style={styles.summaryBadge}><Text style={styles.summaryLabel}>GRAND TOTAL:</Text><Text style={styles.summaryValue}>{grandTotal}</Text></View>
-          <View style={styles.summaryBadge}><Text style={styles.summaryLabel}>{isCumulative ? "CUMULATIVE AVERAGE:" : "TERM AVERAGE:"}</Text><Text style={styles.summaryValue}>{displayAverage}%</Text></View>
+          <View style={styles.summaryBadge}><Text style={styles.summaryLabel}>TERM AVERAGE:</Text><Text style={styles.summaryValue}>{displayAverage}%</Text></View>
         </View>
 
         <View style={styles.footerGrid}>

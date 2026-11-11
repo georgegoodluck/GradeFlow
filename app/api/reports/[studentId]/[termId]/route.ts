@@ -13,7 +13,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stud
   try {
     const session = await auth();
     if (!session?.user?.schoolId) return new NextResponse("Unauthorized", { status: 401 });
-
     const { studentId, termId } = await params;
 
     const [school] = await db.select().from(schools).where(eq(schools.id, session.user.schoolId)).limit(1);
@@ -33,7 +32,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stud
     }).from(scores).innerJoin(subjects, eq(scores.subjectId, subjects.id))
       .where(and(eq(scores.studentId, studentId), eq(scores.termId, termId), eq(scores.schoolId, session.user.schoolId)));
 
-    // --- POSITION CALCULATION (Rank in class for this term) ---
     const classStudentsScores = await db.select({
       studentId: scores.studentId,
       total: sql<number>`sum(${scores.ca1} + ${scores.ca2} + ${scores.ca3} + ${scores.exam})`.mapWith(Number),
@@ -50,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stud
       return {
         subject: s.subjectName, ca1: s.ca1, ca2: s.ca2, ca3: s.ca3, caTotal: s.ca1 + s.ca2 + s.ca3, exam: s.exam,
         total: computed.total, grade: computed.grade, remark: computed.grade === "A" ? "Excellent" : computed.grade === "B" ? "Very Good" : "Good",
-        position: positionMap.get(studentId), // Include position
+        position: positionMap.get(studentId),
       };
     });
 
