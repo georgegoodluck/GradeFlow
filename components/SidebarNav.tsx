@@ -2,15 +2,8 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard,
-  School,
-  BookOpen,
-  Users,
-  GraduationCap,
-  ClipboardList,
-  CalendarDays,
-  FileText,
-  Settings,
+  LayoutDashboard, School, BookOpen, Users, GraduationCap,
+  ClipboardList, CalendarDays, FileText, Settings
 } from "lucide-react";
 
 const adminLinks = [
@@ -33,16 +26,13 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       {adminLinks.map((link) => {
         const isActive = pathname === link.href;
         const Icon = link.icon;
-
         return (
           <Link
             key={link.href}
             href={link.href}
             onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 transition ${
-              isActive
-                ? "bg-gold/15 text-gold font-medium"
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition ${
+              isActive ? "bg-gold/15 text-gold font-medium" : "text-gray-400 hover:bg-white/5 hover:text-white"
             }`}
           >
             <Icon className="h-4 w-4" />
