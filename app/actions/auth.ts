@@ -7,7 +7,6 @@ import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { authDb } from "@/db";
 import { schools, staff } from "@/db/schema";
-import { generateSchoolCode } from "@/lib/school-code";
 
 export async function loginAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
@@ -39,56 +38,54 @@ export async function registerOwner(formData: FormData): Promise<void> {
   const headOfSchoolTitle = formData.get("headOfSchoolTitle");
   const headOfSchoolName = formData.get("headOfSchoolName");
 
-  if (typeof email !== "string" || typeof password !== "string" || typeof schoolName !== "string" || typeof motto !== "string" || typeof headOfSchoolTitle !== "string" || typeof headOfSchoolName !== "string") {
+  if (
+    typeof email !== "string" ||
+    typeof password !== "string" ||
+    typeof schoolName !== "string" ||
+    typeof motto !== "string" ||
+    typeof headOfSchoolTitle !== "string" ||
+    typeof headOfSchoolName !== "string"
+  ) {
     redirect("/register?error=invalid");
   }
 
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedSchool = schoolName.trim();
 
-  if (trimmedEmail.length === 0 || trimmedSchool.length === 0 || password.length < 6) redirect("/register?error=invalid");
+  if (
+    trimmedEmail.length === 0 ||
+    trimmedSchool.length === 0 ||
+    password.length < 6
+  )
+    redirect("/register?error=invalid");
 
-  const existing = await authDb.select({ id: staff.id }).from(staff).where(eq(staff.email, trimmedEmail)).limit(1);
+  const existing = await authDb
+    .select({ id: staff.id })
+    .from(staff)
+    .where(eq(staff.email, trimmedEmail))
+    .limit(1);
   if (existing.length > 0) redirect("/register?error=exists");
-
-  let finalCode = generateSchoolCode(trimmedSchool);
-  let attempts = 0;
-  while (attempts < 5) {
-    const codeExists = await authDb.select({ id: schools.id }).from(schools).where(eq(schools.code, finalCode)).limit(1);
-    if (codeExists.length === 0) break;
-    finalCode = generateSchoolCode(trimmedSchool);
-    attempts++;
-  }
-
-  if (attempts >= 5) redirect("/register?error=code_failed");
 
   const passwordHash = await hash(password, 12);
 
-  const [school] = await authDb.insert(schools).values({
-    name: trimmedSchool,
-    code: finalCode,
-    motto: motto.trim(),
-    headOfSchoolTitle: headOfSchoolTitle.trim(),
-    headOfSchoolName: headOfSchoolName.trim(),
-  }).returning({ id: schools.id, code: schools.code });
+  const [school] = await authDb
+    .insert(schools)
+    .values({
+      name: trimmedSchool,
+      motto: motto.trim(),
+      headOfSchoolTitle: headOfSchoolTitle.trim(),
+      headOfSchoolName: headOfSchoolName.trim(),
+    })
+    .returning({ id: schools.id });
 
   await authDb.insert(staff).values({
     schoolId: school.id,
     email: trimmedEmail,
     passwordHash,
+    plainPassword: password, // Store for owner visibility
     name: trimmedEmail.split("@")[0],
     role: "owner",
   });
 
   redirect(`/login?registered=1`);
-}
-
-export async function requestPasswordReset(formData: FormData): Promise<void> {
-  const email = formData.get("email");
-  if (typeof email !== "string") redirect("/login?error=invalid");
-  redirect("/login?reset_sent=1");
-}
-
-export async function resetPassword(formData: FormData): Promise<void> {
-  redirect("/login?reset_success=1");
 }

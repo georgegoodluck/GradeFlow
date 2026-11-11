@@ -1,3 +1,4 @@
+// db/schema.ts
 import {
   pgTable,
   uuid,
@@ -17,7 +18,6 @@ export const staffRoleEnum = pgEnum("staff_role", [
 export const schools = pgTable("schools", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  code: text("code").notNull().unique(),
   motto: text("motto").default("KNOWLEDGE, GODLINESS AND POWER"),
   logoUrl: text("logo_url"),
   headOfSchoolTitle: text("head_of_school_title").default("Proprietress"),
@@ -35,6 +35,7 @@ export const staff = pgTable("staff", {
     .references(() => schools.id, { onDelete: "cascade" }),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  plainPassword: text("plain_password").notNull(),
   name: text("name").notNull(),
   role: staffRoleEnum("role").notNull().default("teacher"),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -74,6 +75,7 @@ export const students = pgTable("students", {
   }),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  plainPassword: text("plain_password").notNull(),
   name: text("name").notNull(),
   admissionNo: text("admission_no").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })

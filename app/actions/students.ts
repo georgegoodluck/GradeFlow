@@ -1,3 +1,4 @@
+// app/actions/students.ts
 "use server";
 
 import { hash } from "bcryptjs";
@@ -24,7 +25,6 @@ export async function addStudent(
   if (!name || !classId)
     return { success: false, error: "Name and class are required." };
 
-  // AUTO-GENERATE ADMISSION NUMBER
   const lastStudent = await db
     .select({ admissionNo: students.admissionNo })
     .from(students)
@@ -43,7 +43,8 @@ export async function addStudent(
   }
 
   const email = `${nextAdmissionNo.toLowerCase()}@student.local`;
-  const passwordHash = await hash("Password123", 12);
+  const generatedPassword = "Password123"; // Or randomize this
+  const passwordHash = await hash(generatedPassword, 12);
 
   await db.insert(students).values({
     schoolId: session.user.schoolId,
@@ -52,6 +53,7 @@ export async function addStudent(
     admissionNo: nextAdmissionNo,
     email,
     passwordHash,
+    plainPassword: generatedPassword,
   });
 
   revalidatePath("/dashboard/students");
@@ -70,6 +72,5 @@ export async function deleteStudent(formData: FormData): Promise<void> {
     .where(
       sql`${students.id} = ${id} AND ${students.schoolId} = ${session.user.schoolId}`,
     );
-
   revalidatePath("/dashboard/students");
 }

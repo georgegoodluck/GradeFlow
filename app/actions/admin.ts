@@ -1,3 +1,4 @@
+// app/actions/admin.ts
 "use server";
 
 import { hash } from "bcryptjs";
@@ -23,15 +24,16 @@ export async function saveSchoolName(formData: FormData): Promise<void> {
   if (!session?.user?.schoolId) redirect("/login");
 
   const name = getString(formData, "name");
-  if (!name || name.trim().length === 0) redirect("/onboarding/school?error=empty");
+  if (!name || name.trim().length === 0)
+    redirect("/onboarding/school?error=empty");
 
   const trimmedName = name.trim();
-  const baseSlug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-  const existing = await db.select({ id: schools.id }).from(schools).where(eq(schools.code, baseSlug)).limit(1);
-  const finalSlug = existing.length > 0 ? `${baseSlug}-${Math.floor(Math.random() * 1000)}` : baseSlug;
+  await db
+    .update(schools)
+    .set({ name: trimmedName })
+    .where(eq(schools.id, session.user.schoolId));
 
-  await db.update(schools).set({ name: trimmedName, code: finalSlug }).where(eq(schools.id, session.user.schoolId));
   redirect("/onboarding/term");
 }
 
@@ -59,20 +61,34 @@ export async function saveOnboardingClasses(formData: FormData): Promise<void> {
   if (!session?.user?.schoolId) redirect("/login");
 
   const raw = getString(formData, "classes");
-  if (!raw || raw.trim().length === 0) redirect("/onboarding/classes?error=empty");
+  if (!raw || raw.trim().length === 0)
+    redirect("/onboarding/classes?error=empty");
 
-  const names = raw.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+  const names = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
   if (names.length === 0) redirect("/onboarding/classes?error=empty");
 
-  const existing = await db.select({ name: classes.name }).from(classes).where(eq(classes.schoolId, session.user.schoolId));
+  const existing = await db
+    .select({ name: classes.name })
+    .from(classes)
+    .where(eq(classes.schoolId, session.user.schoolId));
   const existingLower = new Set(existing.map((c) => c.name.toLowerCase()));
   const unique = names.filter((n) => !existingLower.has(n.toLowerCase()));
 
   if (unique.length > 0) {
-    await db.insert(classes).values(unique.map((name) => ({ schoolId: session.user.schoolId!, name })));
+    await db
+      .insert(classes)
+      .values(
+        unique.map((name) => ({ schoolId: session.user.schoolId!, name })),
+      );
   }
 
-  await db.update(schools).set({ onboardingComplete: true }).where(eq(schools.id, session.user.schoolId));
+  await db
+    .update(schools)
+    .set({ onboardingComplete: true })
+    .where(eq(schools.id, session.user.schoolId));
   redirect("/dashboard");
 }
 
@@ -80,19 +96,31 @@ export async function saveOnboardingClasses(formData: FormData): Promise<void> {
 // CLASS & SUBJECT CRUD
 // ==========================================
 
-export async function createClass(formData: FormData): Promise<{ success: boolean; error?: string }> {
+export async function createClass(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
   const name = getString(formData, "name");
-  if (!name || name.trim().length === 0) return { success: false, error: "Name is required." };
+  if (!name || name.trim().length === 0)
+    return { success: false, error: "Name is required." };
 
   const trimmed = name.trim();
-  const existing = await db.select({ id: classes.id }).from(classes).where(sql`${classes.schoolId} = ${session.user.schoolId} AND lower(${classes.name}) = lower(${trimmed})`).limit(1);
-  
-  if (existing.length > 0) return { success: false, error: "Class already exists." };
+  const existing = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(
+      sql`${classes.schoolId} = ${session.user.schoolId} AND lower(${classes.name}) = lower(${trimmed})`,
+    )
+    .limit(1);
 
-  await db.insert(classes).values({ schoolId: session.user.schoolId, name: trimmed });
+  if (existing.length > 0)
+    return { success: false, error: "Class already exists." };
+
+  await db
+    .insert(classes)
+    .values({ schoolId: session.user.schoolId, name: trimmed });
   revalidatePath("/dashboard/classes");
   return { success: true };
 }
@@ -103,7 +131,11 @@ export async function deleteClass(formData: FormData): Promise<void> {
   const id = getString(formData, "id");
   if (!id) return;
 
-  await db.delete(classes).where(sql`${classes.id} = ${id} AND ${classes.schoolId} = ${session.user.schoolId}`);
+  await db
+    .delete(classes)
+    .where(
+      sql`${classes.id} = ${id} AND ${classes.schoolId} = ${session.user.schoolId}`,
+    );
   revalidatePath("/dashboard/classes");
 }
 
@@ -115,10 +147,18 @@ export async function createSubject(formData: FormData): Promise<void> {
   if (!name || name.trim().length === 0) return;
 
   const trimmed = name.trim();
-  const existing = await db.select({ id: subjects.id }).from(subjects).where(sql`${subjects.schoolId} = ${session.user.schoolId} AND lower(${subjects.name}) = lower(${trimmed})`).limit(1);
+  const existing = await db
+    .select({ id: subjects.id })
+    .from(subjects)
+    .where(
+      sql`${subjects.schoolId} = ${session.user.schoolId} AND lower(${subjects.name}) = lower(${trimmed})`,
+    )
+    .limit(1);
   if (existing.length > 0) return;
 
-  await db.insert(subjects).values({ schoolId: session.user.schoolId, name: trimmed });
+  await db
+    .insert(subjects)
+    .values({ schoolId: session.user.schoolId, name: trimmed });
   revalidatePath("/dashboard/subjects");
 }
 
@@ -128,7 +168,11 @@ export async function deleteSubject(formData: FormData): Promise<void> {
   const id = getString(formData, "id");
   if (!id) return;
 
-  await db.delete(subjects).where(sql`${subjects.id} = ${id} AND ${subjects.schoolId} = ${session.user.schoolId}`);
+  await db
+    .delete(subjects)
+    .where(
+      sql`${subjects.id} = ${id} AND ${subjects.schoolId} = ${session.user.schoolId}`,
+    );
   revalidatePath("/dashboard/subjects");
 }
 
@@ -136,10 +180,13 @@ export async function deleteSubject(formData: FormData): Promise<void> {
 // STAFF MANAGEMENT
 // ==========================================
 
-export async function addStaffMember(formData: FormData): Promise<{ success: boolean; generatedPassword?: string; error?: string }> {
+export async function addStaffMember(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
-  if (session.user.role !== "owner" && session.user.role !== "admin") redirect("/dashboard");
+  if (session.user.role !== "owner" && session.user.role !== "admin")
+    redirect("/dashboard");
 
   const email = getString(formData, "email");
   const name = getString(formData, "name");
@@ -152,8 +199,13 @@ export async function addStaffMember(formData: FormData): Promise<{ success: boo
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedName = name.trim();
 
-  const existingStaff = await db.select({ id: staff.id }).from(staff).where(sql`lower(${staff.email}) = ${trimmedEmail}`).limit(1);
-  if (existingStaff.length > 0) return { success: false, error: "Email already exists." };
+  const existingStaff = await db
+    .select({ id: staff.id })
+    .from(staff)
+    .where(sql`lower(${staff.email}) = ${trimmedEmail}`)
+    .limit(1);
+  if (existingStaff.length > 0)
+    return { success: false, error: "Email already exists." };
 
   const generatedPassword = randomBytes(4).toString("hex");
   const passwordHash = await hash(generatedPassword, 12);
@@ -162,12 +214,13 @@ export async function addStaffMember(formData: FormData): Promise<{ success: boo
     schoolId: session.user.schoolId,
     email: trimmedEmail,
     passwordHash,
+    plainPassword: generatedPassword,
     name: trimmedName,
     role,
   });
 
   revalidatePath("/dashboard/staff");
-  return { success: true, generatedPassword };
+  return { success: true };
 }
 
 // ==========================================
@@ -181,13 +234,34 @@ export async function startNewSession(formData: FormData): Promise<void> {
   const academicSession = getString(formData, "session");
   if (!academicSession) return;
 
-  const existing = await db.select({ id: terms.id }).from(terms).where(sql`${terms.schoolId} = ${session.user.schoolId} AND ${terms.session} = ${academicSession}`).limit(1);
+  const existing = await db
+    .select({ id: terms.id })
+    .from(terms)
+    .where(
+      sql`${terms.schoolId} = ${session.user.schoolId} AND ${terms.session} = ${academicSession}`,
+    )
+    .limit(1);
   if (existing.length > 0) return;
 
   await db.insert(terms).values([
-    { schoolId: session.user.schoolId, name: "First Term", session: academicSession, isActive: true },
-    { schoolId: session.user.schoolId, name: "Second Term", session: academicSession, isActive: false },
-    { schoolId: session.user.schoolId, name: "Third Term", session: academicSession, isActive: false },
+    {
+      schoolId: session.user.schoolId,
+      name: "First Term",
+      session: academicSession,
+      isActive: true,
+    },
+    {
+      schoolId: session.user.schoolId,
+      name: "Second Term",
+      session: academicSession,
+      isActive: false,
+    },
+    {
+      schoolId: session.user.schoolId,
+      name: "Third Term",
+      session: academicSession,
+      isActive: false,
+    },
   ]);
 
   revalidatePath("/dashboard/terms");
@@ -201,8 +275,16 @@ export async function setActiveTerm(formData: FormData): Promise<void> {
   const id = getString(formData, "id");
   if (!id) return;
 
-  await db.update(terms).set({ isActive: false }).where(eq(terms.schoolId, session.user.schoolId));
-  await db.update(terms).set({ isActive: true }).where(sql`${terms.id} = ${id} AND ${terms.schoolId} = ${session.user.schoolId}`);
+  await db
+    .update(terms)
+    .set({ isActive: false })
+    .where(eq(terms.schoolId, session.user.schoolId));
+  await db
+    .update(terms)
+    .set({ isActive: true })
+    .where(
+      sql`${terms.id} = ${id} AND ${terms.schoolId} = ${session.user.schoolId}`,
+    );
 
   revalidatePath("/dashboard/terms");
   revalidatePath("/teacher/scores");
