@@ -142,8 +142,19 @@ async function ScoreEntryWrapper({
       ),
     );
 
-  // Map scores by student ID for quick lookup
-  const scoreMap = new Map(existingScores.map((s) => [s.studentId, s]));
+  // Map scores by student ID for quick lookup, and normalize the remark
+  const scoreMap = new Map(
+    existingScores.map((s) => [
+      s.studentId,
+      {
+        ca1: s.ca1,
+        ca2: s.ca2,
+        ca3: s.ca3,
+        exam: s.exam,
+        remark: s.remark || "", // <-- Converts null to empty string
+      },
+    ]),
+  );
 
   return (
     <div className="space-y-4">

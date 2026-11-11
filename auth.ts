@@ -1,22 +1,18 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { authDb } from "./db";
-import { schools, staff, students } from "./db/schema";
+import { staff, students } from "./db/schema";
 
-function isCredentialsInput(
-  value: unknown,
-): value is { email: string; password: string; schoolCode: string } {
+function isCredentialsInput(value: unknown): value is { email: string; password: string } {
   return (
     typeof value === "object" &&
     value !== null &&
     "email" in value &&
     typeof (value as Record<string, unknown>).email === "string" &&
     "password" in value &&
-    typeof (value as Record<string, unknown>).password === "string" &&
-    "schoolCode" in value &&
-    typeof (value as Record<string, unknown>).schoolCode === "string"
+    typeof (value as Record<string, unknown>).password === "string"
   );
 }
 
@@ -27,33 +23,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        schoolCode: { label: "School", type: "text" },
       },
       async authorize(credentials: unknown) {
         if (!isCredentialsInput(credentials)) return null;
-        const { email, password, schoolCode } = credentials;
+        const { email, password } = credentials;
 
-        if (!schoolCode || schoolCode.trim().length === 0) return null;
-
-        const [school] = await authDb
-          .select()
-          .from(schools)
-          .where(eq(schools.code, schoolCode.trim().toUpperCase()))
-          .limit(1);
-
-        if (!school) return null;
-
-        const [staffMember] = await authDb
-          .select()
-          .from(staff)
-          .where(and(eq(staff.email, email), eq(staff.schoolId, school.id)))
-          .limit(1);
-
+        const [staffMember] = await authDb.select().from(staff).where(eq(staff.email, email)).limit(1);
         if (staffMember) {
-          const valid = await bcrypt.compare(
-            password,
-            staffMember.passwordHash,
-          );
+          const valid = await bcrypt.compare(password, staffMember.passwordHash);
           if (!valid) return null;
           return {
             id: staffMember.id,
@@ -61,19 +38,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: staffMember.name,
             role: staffMember.role,
             schoolId: staffMember.schoolId,
-            schoolCode: school.code,
             userType: "staff" as const,
           };
         }
 
-        const [student] = await authDb
-          .select()
-          .from(students)
-          .where(
-            and(eq(students.email, email), eq(students.schoolId, school.id)),
-          )
-          .limit(1);
-
+        const [student] = await authDb.select().from(students).where(eq(students.email, email)).limit(1);
         if (student) {
           const valid = await bcrypt.compare(password, student.passwordHash);
           if (!valid) return null;
@@ -83,11 +52,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: student.name,
             role: "student" as const,
             schoolId: student.schoolId,
-            schoolCode: school.code,
             userType: "student" as const,
           };
         }
-
         return null;
       },
     }),
@@ -97,7 +64,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.schoolId = (user as { schoolId: string }).schoolId;
-        token.schoolCode = (user as { schoolCode: string }).schoolCode;
         token.role = (user as { role: string }).role;
         token.userType = (user as { userType: string }).userType;
       }
@@ -107,7 +73,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.schoolId = token.schoolId as string;
-        session.user.schoolCode = token.schoolCode as string;
         session.user.role = token.role as string;
         session.user.userType = token.userType as string;
       }
@@ -119,10 +84,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return baseUrl;
     },
   },
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
+  pages: { signIn: "/login" },
+  session: { strategy: "jwt" },
 });
