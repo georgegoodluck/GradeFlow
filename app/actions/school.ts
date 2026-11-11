@@ -13,12 +13,22 @@ export async function updateSchoolDetails(formData: FormData): Promise<void> {
 
   const title = formData.get("headOfSchoolTitle");
   const name = formData.get("headOfSchoolName");
+  const motto = formData.get("motto");
 
-  if (typeof title !== "string" || typeof name !== "string") return;
+  if (
+    typeof title !== "string" ||
+    typeof name !== "string" ||
+    typeof motto !== "string"
+  )
+    return;
 
   await db
     .update(schools)
-    .set({ headOfSchoolTitle: title.trim(), headOfSchoolName: name.trim() })
+    .set({
+      headOfSchoolTitle: title.trim(),
+      headOfSchoolName: name.trim(),
+      motto: motto.trim(),
+    })
     .where(eq(schools.id, session.user.schoolId));
 
   revalidatePath("/dashboard/settings");

@@ -1,1 +1,0 @@
-ALTER TABLE "schools" ADD COLUMN "onboarding_complete" boolean DEFAULT false NOT NULL;

@@ -6,158 +6,90 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { authDb } from "@/db";
-import { schools, staff } from "@/db/schema";
-import { generateSchoolCode } from "@/lib/school-code";
-
-// ==========================================
-// FIND SCHOOL (code → login with code pre-filled)
-// ==========================================
-
-export async function findSchoolAction(formData: FormData): Promise<void> {
-  const code = formData.get("code");
-  if (typeof code !== "string" || code.trim().length === 0) {
-    redirect("/login?error=invalid");
-  }
-
-  const cleanCode = code.trim().toUpperCase();
-
-  const [school] = await authDb
-    .select({ code: schools.code })
-    .from(schools)
-    .where(eq(schools.code, cleanCode))
-    .limit(1);
-
-  if (school) {
-    redirect(`/login?schoolCode=${encodeURIComponent(school.code)}`);
-  } else {
-    redirect(`/login?error=not_found`);
-  }
-}
-
-// ==========================================
-// LOGIN (tenant-aware, code-based)
-// ==========================================
+import { schools, staff, terms } from "@/db/schema";
 
 export async function loginAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
   const password = formData.get("password");
-  const schoolCode = formData.get("schoolCode");
 
-  if (
-    typeof email !== "string" ||
-    typeof password !== "string" ||
-    typeof schoolCode !== "string"
-  ) {
+  if (typeof email !== "string" || typeof password !== "string") {
     redirect("/login?error=invalid");
-  }
-
-  const cleanCode = schoolCode.trim().toUpperCase();
-
-  if (email.trim() === "" || password.trim() === "" || cleanCode === "") {
-    redirect(
-      `/login?error=invalid${cleanCode ? `&schoolCode=${encodeURIComponent(cleanCode)}` : ""}`,
-    );
   }
 
   try {
     await signIn("credentials", {
       email: email.trim(),
       password,
-      schoolCode: cleanCode,
-      // Keep this. The proxy will intercept and route to /teacher or /student if needed.
       redirectTo: "/dashboard",
     });
   } catch (error: unknown) {
     if (error instanceof AuthError) {
-      redirect(
-        `/login?error=${error.type}&schoolCode=${encodeURIComponent(cleanCode)}`,
-      );
+      redirect(`/login?error=${error.type}`);
     }
     throw error;
   }
 }
 
-// ==========================================
-// REGISTER (owner self-signup)
-// ==========================================
-
 export async function registerOwner(formData: FormData): Promise<void> {
   const email = formData.get("email");
   const password = formData.get("password");
-  const name = formData.get("name");
   const schoolName = formData.get("schoolName");
+  const motto = formData.get("motto");
+  const headOfSchoolTitle = formData.get("headOfSchoolTitle");
+  const headOfSchoolName = formData.get("headOfSchoolName");
 
   if (
     typeof email !== "string" ||
     typeof password !== "string" ||
-    typeof name !== "string" ||
-    typeof schoolName !== "string"
+    typeof schoolName !== "string" ||
+    typeof motto !== "string" ||
+    typeof headOfSchoolTitle !== "string" ||
+    typeof headOfSchoolName !== "string"
   ) {
     redirect("/register?error=invalid");
   }
 
   const trimmedEmail = email.trim().toLowerCase();
-  const trimmedName = name.trim();
   const trimmedSchool = schoolName.trim();
 
-  if (
-    trimmedEmail.length === 0 ||
-    trimmedName.length === 0 ||
-    trimmedSchool.length === 0 ||
-    password.length < 6
-  ) {
+  if (trimmedEmail.length === 0 || trimmedSchool.length === 0 || password.length < 6) {
     redirect("/register?error=invalid");
   }
 
-  // 1. Check for existing staff email
-  const existing = await authDb
-    .select({ id: staff.id })
-    .from(staff)
-    .where(eq(staff.email, trimmedEmail))
-    .limit(1);
+  const existing = await authDb.select({ id: staff.id }).from(staff).where(eq(staff.email, trimmedEmail)).limit(1);
+  if (existing.length > 0) redirect("/register?error=exists");
 
-  if (existing.length > 0) {
-    redirect("/register?error=exists");
-  }
-
-  // 2. Generate unique school code with retry logic
-  let finalCode = generateSchoolCode(trimmedSchool);
-  let attempts = 0;
-
-  while (attempts < 5) {
-    const codeExists = await authDb
-      .select({ id: schools.id })
-      .from(schools)
-      .where(eq(schools.code, finalCode))
-      .limit(1);
-
-    if (codeExists.length === 0) break;
-
-    finalCode = generateSchoolCode(trimmedSchool);
-    attempts++;
-  }
-
-  if (attempts >= 5) {
-    redirect("/register?error=code_failed");
-  }
-
-  // 3. Hash password
   const passwordHash = await hash(password, 12);
 
-  // 4. Create school + owner
   const [school] = await authDb
     .insert(schools)
-    .values({ name: trimmedSchool, code: finalCode })
-    .returning({ id: schools.id, code: schools.code });
+    .values({
+      name: trimmedSchool,
+      motto: motto.trim(),
+      headOfSchoolTitle: headOfSchoolTitle.trim(),
+      headOfSchoolName: headOfSchoolName.trim(),
+      onboardingComplete: true, // Skip onboarding completely
+    })
+    .returning({ id: schools.id });
 
   await authDb.insert(staff).values({
     schoolId: school.id,
     email: trimmedEmail,
     passwordHash,
-    name: trimmedName,
+    plainPassword: password,
+    name: trimmedEmail.split("@")[0],
     role: "owner",
   });
 
-  // 5. Redirect to login with the code pre-filled + registered flag
-  redirect(`/login?schoolCode=${encodeURIComponent(school.code)}&registered=1`);
+  // AUTOMATICALLY CREATE THE FIRST TERM FOR THE CURRENT SESSION
+  const currentYear = new Date().getFullYear();
+  const currentSession = `${currentYear}/${currentYear + 1}`;
+
+  await authDb.insert(terms).values([
+    { schoolId: school.id, name: "First Term", session: currentSession, isActive: true },
+    { schoolId: school.id, name: "Second Term", session: currentSession, isActive: false },
+    { schoolId: school.id, name: "Third Term", session: currentSession, isActive: false },
+  ]);
+
+  redirect(`/login?registered=1`);
 }

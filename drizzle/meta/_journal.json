@@ -5,36 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1794269805487,
-      "tag": "0000_blue_whiplash",
+      "when": 1794357179816,
+      "tag": "0000_serious_talkback",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1794270493331,
-      "tag": "0001_spicy_dakota_north",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1794276560915,
-      "tag": "0002_kind_photon",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1794333104876,
-      "tag": "0003_clean_old_lace",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1794348119892,
-      "tag": "0004_new_otto_octavius",
+      "when": 1794358151683,
+      "tag": "0001_flowery_hemingway",
       "breakpoints": true
     }
   ]

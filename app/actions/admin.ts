@@ -1,44 +1,291 @@
+// app/actions/admin.ts
 "use server";
 
+import { hash } from "bcryptjs";
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { terms } from "@/db/schema";
+import { classes, subjects, staff, schools, terms } from "@/db/schema";
 
-export async function createNextTerm(formData: FormData): Promise<void> {
+function getString(formData: FormData, key: string): string | null {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : null;
+}
+
+// ==========================================
+// ONBOARDING ACTIONS
+// ==========================================
+
+export async function saveSchoolName(formData: FormData): Promise<void> {
   const session = await auth();
   if (!session?.user?.schoolId) redirect("/login");
 
-  const academicSession = formData.get("session");
-  if (typeof academicSession !== "string") return;
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0)
+    redirect("/onboarding/school?error=empty");
 
-  // Check what terms already exist for this session
-  const existing = await db
-    .select({ name: terms.name })
-    .from(terms)
-    .where(
-      sql`${terms.schoolId} = ${session.user.schoolId} AND ${terms.session} = ${academicSession}`,
-    );
+  const trimmedName = name.trim();
 
-  const existingNames = new Set(existing.map((t) => t.name.toLowerCase()));
+  await db
+    .update(schools)
+    .set({ name: trimmedName })
+    .where(eq(schools.id, session.user.schoolId));
 
-  let nextTermName = "";
-  if (!existingNames.has("first term")) nextTermName = "First Term";
-  else if (!existingNames.has("second term")) nextTermName = "Second Term";
-  else if (!existingNames.has("third term")) nextTermName = "Third Term";
-  else {
-    // All three exist. Prompt them to change session or delete.
-    return;
-  }
+  redirect("/onboarding/term");
+}
+
+export async function saveFirstTerm(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const termName = getString(formData, "name");
+  const academicSession = getString(formData, "session");
+
+  if (!termName || !academicSession) redirect("/onboarding/term?error=empty");
 
   await db.insert(terms).values({
     schoolId: session.user.schoolId,
-    name: nextTermName,
+    name: termName.trim(),
     session: academicSession,
-    isActive: false,
+    isActive: true,
   });
 
+  redirect("/onboarding/classes");
+}
+
+export async function saveOnboardingClasses(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const raw = getString(formData, "classes");
+  if (!raw || raw.trim().length === 0)
+    redirect("/onboarding/classes?error=empty");
+
+  const names = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (names.length === 0) redirect("/onboarding/classes?error=empty");
+
+  const existing = await db
+    .select({ name: classes.name })
+    .from(classes)
+    .where(eq(classes.schoolId, session.user.schoolId));
+  const existingLower = new Set(existing.map((c) => c.name.toLowerCase()));
+  const unique = names.filter((n) => !existingLower.has(n.toLowerCase()));
+
+  if (unique.length > 0) {
+    await db
+      .insert(classes)
+      .values(
+        unique.map((name) => ({ schoolId: session.user.schoolId!, name })),
+      );
+  }
+
+  await db
+    .update(schools)
+    .set({ onboardingComplete: true })
+    .where(eq(schools.id, session.user.schoolId));
+  redirect("/dashboard");
+}
+
+// ==========================================
+// CLASS & SUBJECT CRUD
+// ==========================================
+
+export async function createClass(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0)
+    return { success: false, error: "Name is required." };
+
+  const trimmed = name.trim();
+  const existing = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(
+      sql`${classes.schoolId} = ${session.user.schoolId} AND lower(${classes.name}) = lower(${trimmed})`,
+    )
+    .limit(1);
+
+  if (existing.length > 0)
+    return { success: false, error: "Class already exists." };
+
+  await db
+    .insert(classes)
+    .values({ schoolId: session.user.schoolId, name: trimmed });
+  revalidatePath("/dashboard/classes");
+  return { success: true };
+}
+
+export async function deleteClass(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  await db
+    .delete(classes)
+    .where(
+      sql`${classes.id} = ${id} AND ${classes.schoolId} = ${session.user.schoolId}`,
+    );
+  revalidatePath("/dashboard/classes");
+}
+
+export async function createSubject(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const name = getString(formData, "name");
+  if (!name || name.trim().length === 0) return;
+
+  const trimmed = name.trim();
+  const existing = await db
+    .select({ id: subjects.id })
+    .from(subjects)
+    .where(
+      sql`${subjects.schoolId} = ${session.user.schoolId} AND lower(${subjects.name}) = lower(${trimmed})`,
+    )
+    .limit(1);
+  if (existing.length > 0) return;
+
+  await db
+    .insert(subjects)
+    .values({ schoolId: session.user.schoolId, name: trimmed });
+  revalidatePath("/dashboard/subjects");
+}
+
+export async function deleteSubject(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  await db
+    .delete(subjects)
+    .where(
+      sql`${subjects.id} = ${id} AND ${subjects.schoolId} = ${session.user.schoolId}`,
+    );
+  revalidatePath("/dashboard/subjects");
+}
+
+// ==========================================
+// STAFF MANAGEMENT
+// ==========================================
+
+export async function addStaffMember(
+  formData: FormData,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+  if (session.user.role !== "owner" && session.user.role !== "admin")
+    redirect("/dashboard");
+
+  const email = getString(formData, "email");
+  const name = getString(formData, "name");
+  const role = getString(formData, "role");
+
+  if (!email || !name || (role !== "teacher" && role !== "admin")) {
+    return { success: false, error: "Missing required fields." };
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedName = name.trim();
+
+  const existingStaff = await db
+    .select({ id: staff.id })
+    .from(staff)
+    .where(sql`lower(${staff.email}) = ${trimmedEmail}`)
+    .limit(1);
+  if (existingStaff.length > 0)
+    return { success: false, error: "Email already exists." };
+
+  const generatedPassword = randomBytes(4).toString("hex");
+  const passwordHash = await hash(generatedPassword, 12);
+
+  await db.insert(staff).values({
+    schoolId: session.user.schoolId,
+    email: trimmedEmail,
+    passwordHash,
+    plainPassword: generatedPassword,
+    name: trimmedName,
+    role,
+  });
+
+  revalidatePath("/dashboard/staff");
+  return { success: true };
+}
+
+// ==========================================
+// TERMS MANAGEMENT
+// ==========================================
+
+export async function startNewSession(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const academicSession = getString(formData, "session");
+  if (!academicSession) return;
+
+  const existing = await db
+    .select({ id: terms.id })
+    .from(terms)
+    .where(
+      sql`${terms.schoolId} = ${session.user.schoolId} AND ${terms.session} = ${academicSession}`,
+    )
+    .limit(1);
+  if (existing.length > 0) return;
+
+  await db.insert(terms).values([
+    {
+      schoolId: session.user.schoolId,
+      name: "First Term",
+      session: academicSession,
+      isActive: true,
+    },
+    {
+      schoolId: session.user.schoolId,
+      name: "Second Term",
+      session: academicSession,
+      isActive: false,
+    },
+    {
+      schoolId: session.user.schoolId,
+      name: "Third Term",
+      session: academicSession,
+      isActive: false,
+    },
+  ]);
+
   revalidatePath("/dashboard/terms");
+  revalidatePath("/dashboard");
+}
+
+export async function setActiveTerm(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const id = getString(formData, "id");
+  if (!id) return;
+
+  await db
+    .update(terms)
+    .set({ isActive: false })
+    .where(eq(terms.schoolId, session.user.schoolId));
+  await db
+    .update(terms)
+    .set({ isActive: true })
+    .where(
+      sql`${terms.id} = ${id} AND ${terms.schoolId} = ${session.user.schoolId}`,
+    );
+
+  revalidatePath("/dashboard/terms");
+  revalidatePath("/teacher/scores");
 }
