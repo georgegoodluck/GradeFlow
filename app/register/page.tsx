@@ -1,44 +1,39 @@
-import { Suspense } from "react";
+import { hash } from "bcryptjs";
+import { db } from "@/db";
+import { staff, schools } from "@/db/schema";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
-import { auth } from "@/auth";
-import { registerOwner } from "@/app/actions/auth";
-import { SubmitButton } from "@/components/SubmitButton";
-import { PasswordInput } from "@/components/PasswordInput";
+import { eq } from "drizzle-orm";
 
-export default function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-charcoal p-6">
-      <Suspense fallback={<RegisterSkeleton />}>
-        <RegisterForm searchParams={searchParams} />
-      </Suspense>
-    </div>
-  );
-}
+async function register(formData: FormData) {
+  "use server";
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const name = formData.get("name") as string;
+  const schoolName = formData.get("schoolName") as string;
 
-async function RegisterForm({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  await connection();
-  const session = await auth();
-  if (session?.user) redirect("/dashboard");
-  const params = await searchParams;
+  // Check duplicate email
+  const existing = await db
+    .select()
+    .from(staff)
+    .where(eq(staff.email, email))
+    .limit(1);
+  if (existing.length > 0) {
+    redirect("/register?error=exists");
+  }
 
-  return (
-    <form action={registerOwner} className="w-full max-w-md space-y-4 rounded-2xl bg-white p-8 shadow-soft">
-      <h1 className="font-playfair text-3xl text-charcoal text-center mb-6">Register School</h1>
-      {params.error === "exists" && <p className="text-sm text-red-600 text-center">Email already registered.</p>}
-      {params.error === "invalid" && <p className="text-sm text-red-600 text-center">Please fill every field (password ≥ 6 chars).</p>}
-      
-      <input name="schoolName" placeholder="School Name" required className="w-full rounded border p-3 focus:border-gold focus:outline-none" />
-      <input name="motto" placeholder="School Motto" required className="w-full rounded border p-3 focus:border-gold focus:outline-none" />
-      <input name="headOfSchoolTitle" placeholder="Head of School Title (e.g. Proprietress)" required className="w-full rounded border p-3 focus:border-gold focus:outline-none" />
-      <input name="headOfSchoolName" placeholder="Head of School Full Name" required className="w-full rounded border p-3 focus:border-gold focus:outline-none" />
-      <input name="email" type="email" placeholder="Email" required className="w-full rounded border p-3 focus:border-gold focus:outline-none" />
-      <PasswordInput name="password" placeholder="Password" required minLength={6} />
-      <SubmitButton className="w-full">Create Account</SubmitButton>
-    </form>
-  );
-}
+  const passwordHash = await hash(password, 12);
+  const [school] = await db
+    .insert(schools)
+    .values({ name: schoolName })
+    .returning();
 
-function RegisterSkeleton() {
-  return <div className="h-[26rem] w-full max-w-md animate-pulse rounded-2xl bg-white/10" />;
+  await db.insert(staff).values({
+    schoolId: school.id,
+    email,
+    passwordHash,
+    name,
+    role: "owner",
+  });
+
+  redirect("/login");
 }

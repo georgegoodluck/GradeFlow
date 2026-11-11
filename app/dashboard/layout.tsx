@@ -1,29 +1,47 @@
-import { SidebarNav } from "@/components/SidebarNav";
-import { MobileNav } from "@/components/MobileNav";
-import { SignOutButton } from "@/components/SignOutButton";
-import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { db } from "@/db";
+import { schools } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user?.schoolId) redirect("/login");
+
+  const [school] = await db
+    .select({ onboardingComplete: schools.onboardingComplete })
+    .from(schools)
+    .where(eq(schools.id, session.user.schoolId))
+    .limit(1);
+
+  if (!school?.onboardingComplete) redirect("/onboarding/school");
 
   return (
-    <div className="flex min-h-screen bg-soft text-charcoal">
-      <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-charcoal px-4 text-white md:hidden">
-        <h1 className="font-playfair text-lg text-gold">GradeFlow</h1>
-        <MobileNav title="GradeFlow" />
-      </header>
-      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-charcoal p-6 text-white md:flex">
-        <div>
-          <h1 className="font-playfair text-xl text-gold">GradeFlow</h1>
-          <SidebarNav />
-        </div>
-        <div className="mt-auto border-t border-white/10 pt-6">
-          <SignOutButton />
-        </div>
+    <div className="flex min-h-screen">
+      <aside className="w-64 border-r bg-charcoal p-6 text-white">
+        <h1 className="font-playfair text-xl text-gold">Grading SaaS</h1>
+        <nav className="mt-8 space-y-3 text-sm">
+          <a href="/dashboard" className="block hover:text-gold">
+            Dashboard
+          </a>
+          <a href="/dashboard/classes" className="block hover:text-gold">
+            Classes
+          </a>
+          <a href="/dashboard/subjects" className="block hover:text-gold">
+            Subjects
+          </a>
+          <a href="/dashboard/staff" className="block hover:text-gold">
+            Staff
+          </a>
+        </nav>
       </aside>
-      <main className="flex-1 p-4 pt-20 md:p-8 md:pt-8">{children}</main>
+      <main className="flex-1 p-8">{children}</main>
     </div>
   );
 }

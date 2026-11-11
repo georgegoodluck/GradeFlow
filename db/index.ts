@@ -1,19 +1,13 @@
 import { drizzle } from "drizzle-orm/neon-http";
-import { drizzle as drizzleWs } from "drizzle-orm/neon-serverless";
-import { neon, Pool } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 import * as schema from "./schema";
 
-// 1. Read the URL once
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is missing from environment variables.");
-}
-
-// 2. HTTP driver: fast for reads
-const appSql = neon(connectionString);
+// Application client: uses restricted role (RLS active)
+// We'll configure the restricted role connection string later via Neon console
+const appSql = neon(process.env.DATABASE_URL!);
 export const db = drizzle(appSql, { schema });
 
-// 3. WebSocket driver: supports transactions (Auth & Score submission)
-const pool = new Pool({ connectionString });
-export const authDb = drizzleWs(pool, { schema });
+// Auth client: uses owner connection (bypasses RLS)
+// For Phase 1, we temporarily use the same connection; Phase 2 will add a separate owner URL
+const authSql = neon(process.env.DATABASE_URL!);
+export const authDb = drizzle(authSql, { schema });

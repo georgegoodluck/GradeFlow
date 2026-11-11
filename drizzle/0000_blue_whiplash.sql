@@ -9,11 +9,6 @@ CREATE TABLE "classes" (
 CREATE TABLE "schools" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
-	"motto" text DEFAULT 'KNOWLEDGE, GODLINESS AND POWER',
-	"logo_url" text,
-	"head_of_school_title" text DEFAULT 'Proprietress',
-	"head_of_school_name" text DEFAULT 'Mrs. Hannah',
-	"onboarding_complete" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -26,8 +21,7 @@ CREATE TABLE "scores" (
 	"ca1" real DEFAULT 0 NOT NULL,
 	"ca2" real DEFAULT 0 NOT NULL,
 	"ca3" real DEFAULT 0 NOT NULL,
-	"exam" real DEFAULT 0 NOT NULL,
-	"remark" text
+	"exam" real DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "staff" (
@@ -35,7 +29,6 @@ CREATE TABLE "staff" (
 	"school_id" uuid NOT NULL,
 	"email" text NOT NULL,
 	"password_hash" text NOT NULL,
-	"plain_password" text NOT NULL,
 	"name" text NOT NULL,
 	"role" "staff_role" DEFAULT 'teacher' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -48,7 +41,6 @@ CREATE TABLE "students" (
 	"class_id" uuid,
 	"email" text NOT NULL,
 	"password_hash" text NOT NULL,
-	"plain_password" text NOT NULL,
 	"name" text NOT NULL,
 	"admission_no" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -74,7 +66,6 @@ CREATE TABLE "terms" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"school_id" uuid NOT NULL,
 	"name" text NOT NULL,
-	"session" text NOT NULL,
 	"is_active" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );

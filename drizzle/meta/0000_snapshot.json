@@ -1,5 +1,5 @@
 {
-  "id": "ad30d1cb-2449-4736-93d1-6bd60d0ccc82",
+  "id": "f003b7da-489e-4c38-81e4-832f04210f99",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -73,40 +73,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "motto": {
-          "name": "motto",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'KNOWLEDGE, GODLINESS AND POWER'"
-        },
-        "logo_url": {
-          "name": "logo_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "head_of_school_title": {
-          "name": "head_of_school_title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Proprietress'"
-        },
-        "head_of_school_name": {
-          "name": "head_of_school_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Mrs. Hannah'"
-        },
-        "onboarding_complete": {
-          "name": "onboarding_complete",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -186,12 +152,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "remark": {
-          "name": "remark",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -284,12 +244,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plain_password": {
-          "name": "plain_password",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -373,12 +327,6 @@
         },
         "password_hash": {
           "name": "password_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "plain_password": {
-          "name": "plain_password",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -615,12 +563,6 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "session": {
-          "name": "session",
           "type": "text",
           "primaryKey": false,
           "notNull": true

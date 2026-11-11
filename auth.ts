@@ -5,7 +5,10 @@ import { eq } from "drizzle-orm";
 import { authDb } from "./db";
 import { staff, students } from "./db/schema";
 
-function isCredentialsInput(value: unknown): value is { email: string; password: string } {
+// Type guard for the credentials input
+function isCredentialsInput(
+  value: unknown,
+): value is { email: string; password: string } {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -17,7 +20,6 @@ function isCredentialsInput(value: unknown): value is { email: string; password:
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
   providers: [
     Credentials({
       credentials: {
@@ -26,11 +28,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials: unknown) {
         if (!isCredentialsInput(credentials)) return null;
+
         const { email, password } = credentials;
 
-        const [staffMember] = await authDb.select().from(staff).where(eq(staff.email, email)).limit(1);
+        // 1. Check staff first
+        const [staffMember] = await authDb
+          .select()
+          .from(staff)
+          .where(eq(staff.email, email))
+          .limit(1);
+
         if (staffMember) {
-          const valid = await bcrypt.compare(password, staffMember.passwordHash);
+          const valid = await bcrypt.compare(
+            password,
+            staffMember.passwordHash,
+          );
           if (!valid) return null;
           return {
             id: staffMember.id,
@@ -42,7 +54,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           };
         }
 
-        const [student] = await authDb.select().from(students).where(eq(students.email, email)).limit(1);
+        // 2. Check students
+        const [student] = await authDb
+          .select()
+          .from(students)
+          .where(eq(students.email, email))
+          .limit(1);
+
         if (student) {
           const valid = await bcrypt.compare(password, student.passwordHash);
           if (!valid) return null;
@@ -55,6 +73,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             userType: "student" as const,
           };
         }
+
         return null;
       },
     }),
@@ -62,7 +81,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
         token.schoolId = (user as { schoolId: string }).schoolId;
         token.role = (user as { role: string }).role;
         token.userType = (user as { userType: string }).userType;
@@ -71,19 +89,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
         session.user.schoolId = token.schoolId as string;
         session.user.role = token.role as string;
         session.user.userType = token.userType as string;
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
-    },
   },
-  pages: { signIn: "/login" },
-  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
+  },
 });

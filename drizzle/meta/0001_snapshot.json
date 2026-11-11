@@ -1,6 +1,6 @@
 {
-  "id": "0549659b-907e-496e-a0ac-8ebc05db85e7",
-  "prevId": "ad30d1cb-2449-4736-93d1-6bd60d0ccc82",
+  "id": "a65f625d-a143-4b49-ac8f-ddaaec9a4472",
+  "prevId": "f003b7da-489e-4c38-81e4-832f04210f99",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -73,33 +73,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "motto": {
-          "name": "motto",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'KNOWLEDGE, GODLINESS AND POWER'"
-        },
-        "logo_url": {
-          "name": "logo_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "head_of_school_title": {
-          "name": "head_of_school_title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Proprietress'"
-        },
-        "head_of_school_name": {
-          "name": "head_of_school_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Mrs. Hannah'"
         },
         "onboarding_complete": {
           "name": "onboarding_complete",
@@ -186,18 +159,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "remark": {
-          "name": "remark",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "position": {
-          "name": "position",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -290,12 +251,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plain_password": {
-          "name": "plain_password",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -383,12 +338,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plain_password": {
-          "name": "plain_password",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -400,12 +349,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "head_remark": {
-          "name": "head_remark",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -627,12 +570,6 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "session": {
-          "name": "session",
           "type": "text",
           "primaryKey": false,
           "notNull": true
